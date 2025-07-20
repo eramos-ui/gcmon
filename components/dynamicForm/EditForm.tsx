@@ -182,7 +182,7 @@ export const EditForm: React.FC<EditFormProps> = ({
   // console.log('en EditForm fields',fields);
   // const validationSchema = getValidationSchemaDynamicForm(fields);
 
-  // console.log("🧾 initialValues:", rowInitial);
+   console.log("🧾 groupedFields:", groupedFields);
   return (
     <>     
     {/* {(() => { console.log('en jsx page ', row); return null; })()}  */}

@@ -12,7 +12,7 @@ if (!MONGODB_URI) {
 let cachedClient: MongoClient | null = null;
 
 export const connectDB = async () => {
-  console.log("Intentando conectar a Mongo...");
+  console.log("Intentando conectar a Mongo...", MONGODB_URI);
   try {
     if (mongoose.connection.readyState >= 1) {
       console.log('✅ Ya conectado a MongoDB');

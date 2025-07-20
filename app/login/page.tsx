@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignInAlt } from '@fortawesome/free-solid-svg-icons';
+import { Footer } from '@/components/general/Footer';
 
 const LoginPage = () => {//eramos@cibeles.cl    poiuyt
   
@@ -92,6 +93,7 @@ const LoginPage = () => {//eramos@cibeles.cl    poiuyt
                 </svg>
                 Conectarse con Google
               </button>
+              
               {/* <p 
                 className="text-blue-500 hover:underline cursor-pointer"
                 onClick={handleRegister}
@@ -104,6 +106,7 @@ const LoginPage = () => {//eramos@cibeles.cl    poiuyt
               >
                 {labels.login.linkForgotPass}            
               </p>           */}
+              <Footer />
             </div>
           </div>
         </div>        

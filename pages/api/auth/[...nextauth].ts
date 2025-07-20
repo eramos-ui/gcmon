@@ -62,8 +62,10 @@ export const authOptions: AuthOptions = {
   ],
   callbacks: {
     async signIn({ user }: { user: any }) {
+      console.log("Iniciando authorize");
+      console.log('🔑 Usuario busca:',user);
       const userInDb=await getUserVigenteByEmail(user.email);
-      console.log('🔑 Usuario encontrado:', userInDb,user);
+      console.log('🔑 Usuario encontrado:', userInDb);
       return !!userInDb;
     },
     async session({ session, token }: { session: Session, token: any }) {

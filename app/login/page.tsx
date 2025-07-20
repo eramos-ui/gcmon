@@ -93,19 +93,7 @@ const LoginPage = () => {//eramos@cibeles.cl    poiuyt
                 </svg>
                 Conectarse con Google
               </button>
-              
-              {/* <p 
-                className="text-blue-500 hover:underline cursor-pointer"
-                onClick={handleRegister}
-              >
-                {labels.login.linkNewUser}
-              </p> */}
-              {/* <p 
-                onClick={handleForgotPassword} 
-                className="text-blue-500 hover:underline cursor-pointer"
-              >
-                {labels.login.linkForgotPass}            
-              </p>           */}
+
               <Footer />
             </div>
           </div>

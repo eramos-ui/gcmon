@@ -12,6 +12,7 @@ if (!MONGODB_URI) {
 let cachedClient: MongoClient | null = null;
 
 export const connectDB = async () => {
+  console.log("Intentando conectar a Mongo...");
   try {
     if (mongoose.connection.readyState >= 1) {
       console.log('✅ Ya conectado a MongoDB');
@@ -22,7 +23,6 @@ export const connectDB = async () => {
       retryWrites: true, // importante para transacciones
       w: 'majority',     // asegura confirmación de escritura
     });
-
     console.log('✅ Conexión a MongoDB exitosa ',MONGODB_URI);
   } catch (error: any) {
     console.error('🔴 Error al conectar a MongoDB:', error);

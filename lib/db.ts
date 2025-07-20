@@ -3,8 +3,9 @@
 import mongoose from 'mongoose';
 import { MongoClient } from 'mongodb';
 
-// const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fvoltadmin?replicaSet=rs0';
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/GastosComunes';
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://jonnyheiss:qoynVk4Vn430yEd9@clustergc.4g4jumk.mongodb.net/GastosComunes?retryWrites=true&w=majority';
+
 console.log("En dn MONGODB_URI:", MONGODB_URI);
 if (!MONGODB_URI) {
   throw new Error('❌ MONGODB_URI no está definido en las variables de entorno.');

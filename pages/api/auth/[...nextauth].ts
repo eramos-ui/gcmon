@@ -25,7 +25,7 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         if (!credentials) return null;
         // console.log('🔒 En auth/[...nextauth]-authorize credentials:', credentials);
-       //console.log('**credentials.email:', credentials.email);
+       console.log('**credentials.email antes de getUserVigenteByEmail:', credentials.email);
        const user=await getUserVigenteByEmail(credentials.email);
 
        if (!user) return null;

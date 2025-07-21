@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const idFamilia = familia.idFamilia;
                 const label = casa.codigoCasa + ' ' +familia.familia;
                 return { value: idFamilia, label };
-            })
+        }).sort((a, b) => a.label.localeCompare(b.label));
         // console.log('familiasCasas',familiasCasas);   
         res.status(200).json(familiasCasas);
     } catch (error) {

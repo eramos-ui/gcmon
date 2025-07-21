@@ -14,14 +14,14 @@ import { SidebarToggleProvider } from '../context/SidebarToggleContext';
 
 import '../styles/globals.css';
 import AppContent from '../components/general/AppContent';
-import { MapProvider,  PlacesProvider } from '@/app/context'; //context de map mapboxgl debe ir dentro de app
+// import { MapProvider,  PlacesProvider } from '@/app/context'; //context de map mapboxgl debe ir dentro de app
 
 import { usePathname } from 'next/navigation';
 import { MenuProvider } from '@/context/MenuContext';
 //import CotizarLayout from "./cotizar/layout";  
 
-import mapboxgl from 'mapbox-gl';
-mapboxgl.accessToken= process.env.NEXT_PUBLIC_ACCESS_token;//ojo que usar cliente para renderizar, Sólo funciona en el cliente
+// import mapboxgl from 'mapbox-gl';
+// mapboxgl.accessToken= process.env.NEXT_PUBLIC_ACCESS_token;//ojo que usar cliente para renderizar, Sólo funciona en el cliente
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname                                    = usePathname();
@@ -37,9 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
        <body>
         <ThemeProvider>
-          { isCotizarPage ? children : (// si es cotizar, no se renderiza el layout
-            <PlacesProvider>
-              <MapProvider>
+          { isCotizarPage ? children : (// si es cotizar, no se renderiza el layout sin MapProvider,  PlacesProvider
                 <SidebarToggleProvider>
                   <SessionProvider>
                     <MenuProvider> 
@@ -47,8 +45,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     </MenuProvider>
                   </SessionProvider>
                 </SidebarToggleProvider>
-              </MapProvider>
-            </PlacesProvider>
           )}
         </ThemeProvider>
       </body>

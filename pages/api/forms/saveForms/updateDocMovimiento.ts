@@ -100,7 +100,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         createAt: new Date(fechaDocumento),
         updatedAt: new Date(hoy),
       });
-          // await nuevoDoc.save();
+      await nuevoDoc.save();
       console.log('en updateDocMovimiento Ingreso nuevoDoc',nuevoDoc);
     
 
@@ -139,7 +139,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           monto: aPagar,
          }
          console.log('newCarteraIngreso',newCarteraIngreso)
-        //  await CarteraIngreso.create(newCarteraIngreso);
+         await CarteraIngreso.create(newCarteraIngreso);
        }
     }
     if ( tipoDocumento === "GASTO"){

@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, closeSidebar, user, menuDa
   const sidebarClass = 'order-last';
   return (
     <>
-      {console.log('JSX SideBar-menuItems',menuItems, isVisible )}
+      {/* {console.log('JSX SideBar-menuItems',menuItems, isVisible )} */}
       <div ref={sidebarRef} className={`w-96 h-full bg-gray-800 text-white rounded-lg shadow-lg p-2 ${sidebarClass}`}>
         <ul>
           {menuItems.map((item, index) => {

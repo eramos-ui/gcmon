@@ -39,7 +39,7 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar }) => {//, user, setUser
   const [ alertType, setAlertType ]           = useState<'success' | 'error' | 'info'>('info'); 
   const { update }                            = useSession();
   useEffect(() => {
-    console.log('en Navbar useEffect user',user);
+    // console.log('en Navbar useEffect user',user);
     if (user) {
       setNewName(user.name);
       setNewEmail(user.email);

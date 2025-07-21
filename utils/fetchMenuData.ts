@@ -3,7 +3,7 @@ import { MenuConfig } from "@/types/interfaces";
 
 export const fetchMenuData = async (userId: string): Promise<MenuConfig> => {
   
-    //  console.log('En fetchMenuData');
+   console.log('En fetchMenuData');
     try {
       const response = await fetch(`/api/getMenuData?userId=${userId}`); 
       if (!response.ok) { 

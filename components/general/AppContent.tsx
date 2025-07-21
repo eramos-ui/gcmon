@@ -21,7 +21,7 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
   const [ loading, setLoading ]                                    = useState(true);
   const { menuData, refreshMenu, setUser: setUserInContext, user } = useMenu();
 
-  //  console.log('AppContent menuData',menuData);
+    console.log('AppContent menuData',menuData);
   useEffect(() => {   
     //console.log('1 en useEffect status',status,pathname);
     if (status === 'loading') {
@@ -94,6 +94,7 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
   }, [session, setUserInContext, refreshMenu]);
   */
  const fetchUserData = useCallback(async (userId: string) => {
+   console.log('en AppContent fetchUserData',userId);
    if (!userId) return;
    try {
      const response = await fetch(`/api/usuarios/${userId}`);

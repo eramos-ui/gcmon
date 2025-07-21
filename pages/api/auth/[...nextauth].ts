@@ -27,12 +27,12 @@ export const authOptions: AuthOptions = {
         // console.log('🔒 En auth/[...nextauth]-authorize credentials:', credentials);
        console.log('**credentials.email antes de getUserVigenteByEmail:', credentials.email);
        const user=await getUserVigenteByEmail(credentials.email);
-
+      //  console.log('**user en authorize credentials',user);
        if (!user) return null;
         // console.log('🔒 En auth/[...nextauth]-getUserVigente user:', user);      
-        if (  await compare(credentials.password, user.password) || credentials.password === 'poiuyt.')
+       if (  await compare(credentials.password, user.password) || credentials.password === 'poiuyt.')
          {
-          // console.log('🔒 En auth/[...nextauth]-getUserVigente válido user:', user);
+          console.log('🔒 En auth/[...nextauth]-getUserVigente user válido :', user.name, user.email);
           return {
             id: user.id,
             name: user.name,
@@ -40,8 +40,7 @@ export const authOptions: AuthOptions = {
             avatar: user.avatar,
             theme: user.theme,
           };
-        }
-      
+        }      
         console.error(`❌ Contraseña inválida para usuario: ${user.email}`);
         return null;
       },
@@ -68,7 +67,7 @@ export const authOptions: AuthOptions = {
       console.log("Iniciando authorize");
       console.log('🔑 Usuario busca:',user);
       const userInDb=await getUserVigenteByEmail(user.email);
-      console.log('🔑 Usuario encontrado:', userInDb);
+      console.log('🔑 Usuario encontrado:', userInDb.name, userInDb.email);
       return !!userInDb;
     },
     async session({ session, token }: { session: Session, token: any }) {

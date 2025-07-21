@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, closeSidebar, user, menuDa
   const toggleSubMenu                 = (index: number) => {
     setActiveIndex(activeIndex === index ? null : index);
   };
-  //  console.log('Siderbar menuData',menuData );
+   console.log('Siderbar menuData',menuData );
   // const navigateTo = useCallback( ( url: string ) => {
   //   //toggleSubMenu();//esto ocultará el menú al tocar el mismo menú
   //   //console.log('navigateTo en menu', url)

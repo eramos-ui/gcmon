@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, closeSidebar, user, menuDa
   const toggleSubMenu                 = (index: number) => {
     setActiveIndex(activeIndex === index ? null : index);
   };
-   console.log('Siderbar menuData',menuData );
+  //  console.log('Siderbar menuData',menuData );
   // const navigateTo = useCallback( ( url: string ) => {
   //   //toggleSubMenu();//esto ocultará el menú al tocar el mismo menú
   //   //console.log('navigateTo en menu', url)
@@ -92,9 +92,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isVisible, closeSidebar, user, menuDa
   const  menuItems  = menuData.filter(item => item.isValid).filter(item => item.system === systemName);//ojo con systemName en el .env
   // console.log('JSX SideBar-user',user );
   const sidebarClass = 'order-last';
-  // console.log('JSX SideBar-menuItems',!menuItems, !isVisible );
   return (
     <>
+      {console.log('JSX SideBar-menuItems',menuItems, !isVisible )}
       <div ref={sidebarRef} className={`w-96 h-full bg-gray-800 text-white rounded-lg shadow-lg p-2 ${sidebarClass}`}>
         <ul>
           {menuItems.map((item, index) => {

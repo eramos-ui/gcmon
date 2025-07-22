@@ -34,18 +34,6 @@ export interface CustomSelectProps {
   // dependentValue?: any;//dato para select anidado
 }
 
-// Hook personalizado que maneja de forma segura useField
-// const useSafeField = (name?: string) => {
-//   try {
-//     if (name) return useField(name);
-//   } catch (e) {
-//     // no Formik context
-//   }
-//   return [
-//     { value: undefined, onChange: () => {}, onBlur: () => {} },
-//     { touched: false, error: undefined }
-//   ];
-// };
 
 export const CustomSelect: React.FC<CustomSelectProps> = ({
   label,
@@ -67,16 +55,23 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   // Usamos el hook personalizado que siempre se ejecuta
   const formikContext = useContext(FormikContext as React.Context<FormikContextType<FormikValues> | null>);
   const isInsideFormik = !!formikContext && !!name;
+  let field: any = { name: name || '', value: value ?? '', onChange: () => {}, onBlur: () => {} };
+  let meta: any = { touched: false, error: undefined };
+  
+  if (isInsideFormik && name) {
+    const [formikField, formikMeta] = useField(name);
+    field = formikField;
+    meta = formikMeta;
+  }
+  // const [formikField, formikMeta] = useField(name || '__dummy__');
 
-  const [formikField, formikMeta] = useField(name || '__dummy__');
+  // const field = isInsideFormik
+  // ? formikField
+  // : { name: name || '', value: value, onChange: () => {}, onBlur: () => {} };
 
-  const field = isInsideFormik
-  ? formikField
-  : { name: name || '', value: value, onChange: () => {}, onBlur: () => {} };
-
-  const meta = isInsideFormik
-  ? formikMeta
-  : { touched: false, error: undefined };
+  // const meta = isInsideFormik
+  // ? formikMeta
+  // : { touched: false, error: undefined };
   // Estado local para el valor seleccionado
   const selectedValue = useMemo(() => {
     return isInsideFormik ? field.value : value ?? (multiple ? [] : '');

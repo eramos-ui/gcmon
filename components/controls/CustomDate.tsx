@@ -60,16 +60,23 @@ export const CustomDate: React.FC<Props> = ({ label, format = 'dd-MM-yyyy', them
 
       const formikContext = useContext(FormikContext as React.Context<FormikContextType<any> | null>);
       const isInsideFormik = !!formikContext && !!name;
+      let field: any = { name: name || "", value: value };
+      let meta: any = { touched: false, error: "" };
+      
+      if (isInsideFormik && name) {
+        const [formikField, formikMeta] = useField(name);
+        field = formikField;
+        meta = formikMeta;
+      }
+      // const [formikField, formikMeta] = useField(name || "__dummy__");
 
-      const [formikField, formikMeta] = useField(name || "__dummy__");
+      // const field = isInsideFormik
+      // ? formikField
+      // : { name: name || "", value: value };
 
-      const field = isInsideFormik
-      ? formikField
-      : { name: name || "", value: value };
-
-      const meta = isInsideFormik
-      ? formikMeta
-      : { touched: false, error: "" };
+      // const meta = isInsideFormik
+      // ? formikMeta
+      // : { touched: false, error: "" };
 
       // const [ field, meta ]                   = hasFormik ? useField(name!) : [{ name: name || '', value: value }, { touched: false, error: '' }];
       const [ selectedDate, setSelectedDate ] = useState<Date | null>(

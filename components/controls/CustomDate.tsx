@@ -43,85 +43,104 @@ const parseFlexibleDate = (value: string): Date | null => {
   return null;
 };
 
+// Componente principal que redirige según esté o no en Formik
+export const CustomDate: React.FC<Props> = (props) => {
+  if (props.name) {
+    return <CustomDateWithFormik {...(props as Required<Props>)} />;
+  } else {
+    return <CustomDateStandalone {...props} />;
+  }
+};
+// ✅ Con Formik
+const CustomDateWithFormik: React.FC<Required<Props>> = ({
+  name, label, theme, className = '', format = 'dd-MM-yyyy', disabled = false,
+  captionPosition = 'top', required = false, visible = true, ...props
+}) => {
+  const [field, meta] = useField(name);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    parseFlexibleDate(field.value as string)
+  );
 
-export const CustomDate: React.FC<Props> = ({ label, format = 'dd-MM-yyyy', theme, 
-    className='',disabled=false,captionPosition='top', required=false, value, visible=true, name, onChange,  ...props }) => {
-      // const formik: FormikContextType<any> | null = useFormikContext?.() || null;
-      // let formik: FormikContextType<any> | undefined;
-      // if ( name && typeof name === 'string' && name.length > 0) {
-      //   try {
-      //     formik = useFormikContext();
-      //   } catch {
-      //     formik = undefined;
-      //   }
-      // }
-      //const hasFormik = formik && name;
+  if (!visible) return null;
 
+  const handleChange = (date: Date | null) => {
+    setSelectedDate(date);
+    const formatted = date ? formatDate(date, format) : '';
+    field.onChange({ target: { name, value: formatted } });
+  };
 
-      const formikContext = useContext(FormikContext as React.Context<FormikContextType<any> | null>);
-      const isInsideFormik = !!formikContext && !!name;
-      let field: any = { name: name || "", value: value };
-      let meta: any = { touched: false, error: "" };
-      
-      if (isInsideFormik && name) {
-        const [formikField, formikMeta] = useField(name);
-        field = formikField;
-        meta = formikMeta;
-      }
-      // const [formikField, formikMeta] = useField(name || "__dummy__");
-
-      // const field = isInsideFormik
-      // ? formikField
-      // : { name: name || "", value: value };
-
-      // const meta = isInsideFormik
-      // ? formikMeta
-      // : { touched: false, error: "" };
-
-      // const [ field, meta ]                   = hasFormik ? useField(name!) : [{ name: name || '', value: value }, { touched: false, error: '' }];
-      const [ selectedDate, setSelectedDate ] = useState<Date | null>(
-        parseFlexibleDate((isInsideFormik ? field.value : value) as string)
-      );
-
-    if (!visible) return <></>;
-
-    const handleChange = (date: Date | null) => {
-      setSelectedDate(date);
-      const formatted = date ? formatDate(date, format) : null;
-      if (isInsideFormik && name) {
-        formikContext?.setFieldValue(name, formatted || "");
-      } else {
-        onChange?.(formatted);
-      }
-    };
-
-  return (//ojo que viene en el className el del date y no es adecuado para el label
+  return (
     <>
-      <label 
+      <label
         htmlFor={props.id || name}
-        style={{ marginBottom: captionPosition === "top" ? "0.5rem" : "0" }}      
+        style={{ marginBottom: captionPosition === "top" ? "0.5rem" : "0" }}
         className={`custom-input-container ${theme} ${captionPosition} font-normal`}
-       >{label}  {required && '*'}</label>
+      >
+        {label} {required && '*'}
+      </label>
       <DatePicker
         selected={selectedDate}
-        required={required}
         onChange={handleChange}
-        //dateFormat={format.toLowerCase().replace(/d/g, 'd').replace(/m/g, 'M').replace(/y/g, 'y')}
-        dateFormat="dd-MM-yyyy" // 📌 Siempre muestra `dd-MM-yyyy`
-        className={`w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 
-            focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 ${className}`}
-        placeholderText={props.placeholder}
+        dateFormat="dd-MM-yyyy"
         id={props.id || name}
         locale={locale}
-        autoComplete="off" 
-        showMonthDropdown
-        showYearDropdown 
-        dropdownMode="select"  
         disabled={disabled}
+        className={`w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 
+          focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 ${className}`}
+        placeholderText={props.placeholder}
+        autoComplete="off"
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
       />
-      {isInsideFormik  && meta?.touched && meta?.error && (
+      {meta?.touched && meta?.error && (
         <div className="text-red-500 text-sm mt-1">{meta.error}</div>
       )}
+    </>
+  );
+};
+
+// ✅ Sin Formik
+const CustomDateStandalone: React.FC<Props> = ({
+  label, format = 'dd-MM-yyyy', theme, className = '', disabled = false,
+  captionPosition = 'top', required = false, value, visible = true, onChange, name, ...props
+}) => {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(
+    parseFlexibleDate(value as string)
+  );
+
+  if (!visible) return null;
+
+  const handleChange = (date: Date | null) => {
+    setSelectedDate(date);
+    const formatted = date ? formatDate(date, format) : null;
+    onChange?.(formatted);
+  };
+
+  return (
+    <>
+      <label
+        htmlFor={props.id || name}
+        style={{ marginBottom: captionPosition === "top" ? "0.5rem" : "0" }}
+        className={`custom-input-container ${theme} ${captionPosition} font-normal`}
+      >
+        {label} {required && '*'}
+      </label>
+      <DatePicker
+        selected={selectedDate}
+        onChange={handleChange}
+        dateFormat="dd-MM-yyyy"
+        id={props.id || name}
+        locale={locale}
+        disabled={disabled}
+        className={`w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 
+          focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-700 ${className}`}
+        placeholderText={props.placeholder}
+        autoComplete="off"
+        showMonthDropdown
+        showYearDropdown
+        dropdownMode="select"
+      />
     </>
   );
 };

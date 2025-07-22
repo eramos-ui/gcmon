@@ -146,7 +146,7 @@ export const EditForm: React.FC<EditFormProps> = ({
     // console.log('en EditForm grabar updateValues',updateValues);return;   
     const apiSaveForms=`/api/${apiSaveForm}`;
     const body={...updateValues, formId:formId,  idUserModification:session?.user.id};//siempre agrega el idUserModification
-    console.log('en EditForm grabar body, apiSaveForms',body);
+    console.log('en EditForm grabar body',body);
      try {
       const response = await fetch(`${apiSaveForms}`, {
         method: 'POST',    
@@ -156,8 +156,9 @@ export const EditForm: React.FC<EditFormProps> = ({
       console.log('en EditForm grabar response',response.ok, result);
       if (response.ok) {
         alert("Grabado exitosamente");
-    //     // setTimeout(handleClose, 3000);
-    //     onClose();
+        setTimeout(()=>{
+          onClose();
+        }, 3000);
       } else {
         if (response.status === 400) {
           alert(`${result.error}`);     

@@ -14,7 +14,7 @@ import { CarteraGasto } from '@/models/CarteraGasto';
 import { ClaseMovimiento } from '@/models/ClaseMovimiento';
 import { User } from '@/models/User';
 import { Familia } from '@/models/Familia';
-import { Casa } from '@/models/Casa';
+// import { Casa } from '@/models/Casa';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
@@ -25,21 +25,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Método no permitido' });
   }
-  const fechaDocumento = new Date(req.body.fechaDocumento);
-  const { tipoDocumento,  nroDocumento, idCasa, idUserModification, claseMovimiento, monto, comentario, idFamilia } = req.body;
-  console.log('en updateDocMovimiento tipoDocumento',tipoDocumento);
+  // const fechaDocumento = new Date(req.body.fechaDocumento);
+  const { tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification, claseMovimiento, monto, comentario, idFamilia } = JSON.parse(req.body);
+  const d=fechaDocumento.split('-')[0];
+  const m=fechaDocumento.split('-')[1];
+  const y=fechaDocumento.split('-')[2]; 
+  const fechaDocumentoDate=new Date(y,m-1,d);
+  // console.log('en updateDocMovimiento fechaDocumento',fechaDocumento,d,m,y );
+  // console.log('en updateDocMovimiento fechaDocumentoDate',fechaDocumentoDate );
+  // console.log('en updateDocMovimiento tipoDocumento',tipoDocumento);
+  //  console.log('en updateDocMovimiento req.body',tipoDocumento,  nroDocumento, idCasa, idUserModification, claseMovimiento, monto, comentario, idFamilia);
   // const casas = await Casa.find({});
   const familias = await Familia.find({ //devuelve un array? y findOne no anda
       mesInicio: { $lte: añoMesActual },
       mesTermino: { $gte: añoMesActual }
       }).lean();
-  if (!tipoDocumento && (tipoDocumento==="INGRESO" && tipoDocumento==="GASTO")) {
+
+  const familia=familias.find(familia => familia.idFamilia === idFamilia);
+  // console.log('en updateDocMovimiento familia',familia);
+  if (!tipoDocumento || (tipoDocumento !=="INGRESO" && tipoDocumento !=="GASTO") ) {
     return res.status(400).json({ error: "tipoDocumento debe ser 'GASTO' o 'INGRESO'" });
   }
   const docUsuario=await User.findOne({_id:idUserModification, vigente:true});
   const idUsuario=docUsuario?.idUser;
-  console.log('en updateDocMovimiento docUsuario',docUsuario,idUsuario);
-  console.log('en updateDocMovimiento req.body',tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification,idUsuario, idFamilia)
+  // console.log('en updateDocMovimiento docUsuario',docUsuario,idUsuario);
+  // console.log('en updateDocMovimiento req.body',tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification,idUsuario, idFamilia)
   // Seleccionar el modelo adecuado
   const Model = tipoDocumento === "GASTO" ? DocGasto : DocIngreso;
   // Buscar el nroDocumento más alto
@@ -60,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (ultimoNroCarteraGasto && typeof ultimoNroCarteraGasto.nroMovimiento === "number") {
     nuevoNroCarteraGasto = ultimoNroCarteraGasto.nroMovimiento + 1;
   }    
-  console.log('nuevoNroCarteraGasto',nuevoNroCarteraGasto);
+  // console.log('nuevoNroCarteraGasto',nuevoNroCarteraGasto);
 
   let nuevoNroCarteraIngreso=1;
   const ultimoNroCarteraIngreso = await CarteraIngreso.findOne()
@@ -70,10 +80,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (ultimoNroCarteraIngreso && typeof ultimoNroCarteraIngreso.nroMovimiento === "number") {
     nuevoNroCarteraIngreso = ultimoNroCarteraIngreso.nroMovimiento + 1;
   }
-  console.log('nuevoNroCarteraIngreso',nuevoNroCarteraIngreso);
+  // console.log('nuevoNroCarteraIngreso',nuevoNroCarteraIngreso);
 
   const clases = await ClaseMovimiento.find({ idOrganizacion: 1 }); 
-  console.log('en updateDocMovimiento ultimo',ultimo,nuevoNro);
+  // console.log('en updateDocMovimiento ultimo',ultimo,nuevoNro);
 
 
 
@@ -88,7 +98,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const idFamiliaNumber=Number(idFamilia);
       const familia=familias.find(familia => familia.idFamilia === idFamiliaNumber);
       const idCasa=familia?familia.idCasa:0;
-
+      const fechaDocumentoString=fechaDocumentoDate.toISOString();
+      const hoyString=hoy.toISOString();
+      // console.log('en updateDocMovimiento fechaDocumentoString',fechaDocumentoString,hoyString);
       nuevoDoc = new Model({
         tipoDocumento,
         nroDocumento: nuevoNro,
@@ -97,11 +109,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         monto,
         comentario,//es para los gasstos
         claseMovimiento:0,//es para los gastos
-        createAt: new Date(fechaDocumento),
-        updatedAt: new Date(hoy),
+        createAt: fechaDocumentoString,
+        updatedAt: hoyString,
       });
+      // console.log('en updateDocMovimiento Ingreso nuevoDoc',nuevoDoc);
       await nuevoDoc.save();
-      console.log('en updateDocMovimiento Ingreso nuevoDoc',nuevoDoc);
     
 
       const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})
@@ -111,7 +123,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // console.log('en updateDocMovimiento docIngreso',docIngreso);
       const claseMov=(claseMovimiento === 0)? undefined: claseMovimiento;
       const deudas = await getSaldoCasaFondo(idCasa, claseMov);
-      console.log('Deudas', deudas, idCasa,claseMovimiento)
+      // console.log('Deudas', deudas, idCasa)
       for (const deuda of deudas) {
         const {
           tipoDocumentoRef,
@@ -126,19 +138,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const aPagar = abono >= montoDeuda ? montoDeuda : abono;
         abono -= aPagar;
         const newCarteraIngreso = {
+          nroMovimiento: nuevoNroCarteraIngreso,
           tipoDocumento,
-          nroDocumento: nuevoNroCarteraIngreso,
+          nroDocumento: nuevoNro,
           tipoDocumentoRef,
           nroDocumentoRef,
-          fechaDocumento,
-          fechaMovimiento: hoy,
+          fechaDocumento:fechaDocumentoString,
+          fechaMovimiento: hoyString,
           idCasa, 
           mesPago,
           claseMovimiento: claseMovimientoDeuda,
           entradaSalida: 'S',
           monto: aPagar,
          }
-         console.log('newCarteraIngreso',newCarteraIngreso)
+        //  console.log('newCarteraIngreso',newCarteraIngreso)
+         nuevoNroCarteraIngreso=nuevoNroCarteraIngreso+1;
          await CarteraIngreso.create(newCarteraIngreso);
        }
     }

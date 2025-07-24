@@ -3,7 +3,7 @@ import { CarteraAggregated, CarteraGrilla } from '@/types/interfaceGastosComunes
 
 export const formatGrilla = (rawResults: CarteraAggregated[]): CarteraGrilla[] => {
   const grilla: Record<string, CarteraGrilla> = {};
-  
+  console.log('rawResults',rawResults[0],rawResults[1]);
   rawResults.forEach(({ idCasa, codigoCasa, familia, mes, totalMonto }) => {
     const key = `${idCasa}_${familia}`;
     if (!grilla[key]) {

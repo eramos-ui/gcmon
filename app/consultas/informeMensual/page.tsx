@@ -77,6 +77,7 @@ const InformeMensualPage = () => {
     } else {
       const response = await fetch(`/api/carteraGasto/agrupadoGasto?year=${year}&clase_movimiento=${informe}`);
       const data = await response.json();
+      // console.log('data',data);
       setRows(data);   
     }
   }

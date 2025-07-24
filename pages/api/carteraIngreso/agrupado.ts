@@ -94,7 +94,7 @@ const rawResults: CarteraAggregated[] = await CarteraIngreso.aggregate([
         }
     ]);
     // res.status(200).json(rawResults);
-    const resultado = formatGrilla(rawResults) ;
+    const resultado = formatGrilla( rawResults) ;
 
     res.status(200).json(resultado);
 }

@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useRouter } from "next/navigation";
 import { format } from 'date-fns';
 import CustomModal from "@/components/general/CustomModal";
+import { formatStringDateToDDMMYYYY } from "@/utils/formatDateStringToDDMMYYYY";
 
 const columns:ColumnConfigType<GridRowType>[] = [
     { key: "idCasa", label: "idCasa", captionPosition: "top",visible: false, editable: false, width: '50px', type: "number", options: undefined },
@@ -62,34 +63,36 @@ const MovimientosPeriodoPage = () => {
        
         const response = await fetch(`/api/movimientos/movEntreFechas?fechaInicio=${fechaInicioFormatted}&fechaFin=${fechaFinFormatted}&tipoFondo=${informe}&email=${email}`);
         const data = await response.json();
-        const rows = data.map((row: any) => ({
+        // console.log('data',data);
+        const rows = data.map((row: any) => {
+          const fechaDocumentoFormatted=formatStringDateToDDMMYYYY(row.fechaDocumento,'/');
+          return {
           ...row,
-          fechaDocumento: new Date(row.fechaDocumento).toLocaleDateString('es-ES')
-        }));
+          fechaDocumento: fechaDocumentoFormatted
+        }});
         setRows(rows); 
       }
       const handleZoom = async (row: GridRowType) => {
         const { idCasa }=row;
         const fechaInicial=row.fechaDocumento?.toString();
-        const [day, month, year] = fechaInicial?.split("/") || [];
+        if (!fechaInicial) return
+        const [day, month, year] = fechaInicial?.split("/") || [];//tomada de la fila de la grilla
+        // console.log('en handleZoom fechaInicial',fechaInicial,day,month,year);
         let mes=month.toString();
         let dia=day.toString();
-        if (Number(month)<10) { mes='0'+mes;}
-        if (Number(day)<10) { dia='0'+dia;}
-        const fechaInicioFormatted = `${year}-${mes}-${dia}`;  
+        const fechaInicioFormatted = `${year}-${mes}-${dia}`;//dd-mm-yyyy
+        // console.log('en handleZoom fechaInicioFormatted',fechaInicioFormatted);
         const [day2, month2, year2] = fechaFin?.split("-") || [];
-        const fechaFinFormatted = `${year2}-${month2}-${day2}`;
+        const fechaFinFormatted = `${year2}-${month2}-${day2}`;//dd-mm-yyyy
+        //  console.log('en handleZoom ',day2,month2,year2,fechaFinFormatted);
         let movs:any[]=[];
         if (row.idCasa === 0) {
             if (row.comentario ==='Saldo inicial') {
                 const response = await fetch(`/api/movimientos/movSaldoInicial?fechaInicio=${fechaInicioFormatted}&tipoFondo=${informe}&email=${email}`);
                 movs = await response.json();
-
-            }else{
-              
+            }else{//caso de gasto por día
                 const response = await fetch(`/api/movimientos/movPeriodo?fechaInicio=${fechaInicioFormatted}&fechaFin=${fechaInicioFormatted}&tipoFondo=${informe}&email=${email}`);
                 const data = await response.json();
-                // movs=data.gastos;
                 movs=data.gastos.filter((mov:any) => mov.comentario === row.comentario);
                 if(row.ingreso && data.ingresos.length > 0){
                      movs=data.ingresos

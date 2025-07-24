@@ -4,6 +4,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { formatGrilla } from '@/utils/formatGrilla';
 import { CarteraAggregated } from '@/types/interfaceGastosComunes';
 import { CarteraGasto } from '@/models/CarteraGasto';
+import { ClaseMovimiento } from '../../../models/ClaseMovimiento';
 
 const claseMovimientoMap = {
     GASTO_EMERGENCIA: [99],
@@ -116,6 +117,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   ])
 //   res.status(200).json(rawResults);
-  const resultado = formatGrilla(rawResults) ;
+ const rowResultsIngresoCompatible=rawResults.map((row:any) =>{
+  const codigoCasa=(row.claseMovimiento<10) ? ' '+row.claseMovimiento.toString() : row.claseMovimiento.toString();//para que el orden sea correcto y es por codigoCasa
+  return {
+    idCasa:row.idCasa,
+    codigoCasa:codigoCasa,
+    familia:row.familia,
+    mes:row.mes,
+    totalMonto:row.totalMonto
+  }
+ })
+  const resultado = formatGrilla( rowResultsIngresoCompatible) ;
   res.status(200).json(resultado);
 }

@@ -15,6 +15,7 @@
   export interface CarteraAggregated {
     idCasa: number;
     codigoCasa: string;
+    // claseMovimiento: number;
     familia: string;
     mes: number;
     totalMonto: number;
@@ -24,6 +25,7 @@
     idCasa: number;
     codigoCasa: string;
     familia: string;
+    // claseMovimiento: number;
     [mes: string]: string | number;
     }
 

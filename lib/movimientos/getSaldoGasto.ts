@@ -1,45 +1,42 @@
 import { CarteraGasto } from '@/models/CarteraGasto';
+// import { ClaseMovimiento } from '../../models/ClaseMovimiento';
 
 export async function getSaldoGasto(idOrganizacion:number) {
     const resultado = await CarteraGasto.aggregate([
-        {
-            $match: {
-              entradaSalida: "E"
-            }
+      {
+        $match: {
+          claseMovimiento: { $ne: 0 }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            tipoDocumentoRef: "$tipoDocumentoRef",
+            nroDocumentoRef: "$nroDocumentoRef",        
+            claseMovimiento: "$claseMovimiento",
+            mesPago: "$mesPago"
           },
-            {
-            $lookup: {
-              from: "claseMovimiento",
-              localField: "claseMovimiento",
-              foreignField: "idClaseMovimiento",
-              as: "claseInfo"
-            }
-          },
-          { $unwind: "$claseInfo" },
-          {
-            $group: {
-              _id: {
-                tipoDocumento: "$tipoDocumentoRef",
-                nroDocumento: "$nroDocumentoRef",
-                claseMovimiento: "$claseMovimiento",
-                descripcion: "$claseInfo.descripcion"
-              },
-              saldo: {
-                $sum: {
-                  $cond: [
-                    { $eq: ["$entradaSalida", "E"] },
-                    "$monto",
-                    { $multiply: ["$monto", -1] }
-                  ]
+          saldo: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$entradaSalida", "E"]
+                },
+                "$monto",
+                {
+                  $multiply: ["$monto", -1]
                 }
-              }
+              ]
             }
-          },
-          {
-            $match: {
-              saldo: { $gt: 0 }
-            }
-          },
+          }
+        }
+      },
+      {
+        $match: {
+          saldo: { $gt: 0 } // solo deudas
+        }
+      },
+ 
       {
         $project: {
           tipoDocumentoRef: '$_id.tipoDocumento',

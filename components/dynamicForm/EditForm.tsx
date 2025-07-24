@@ -156,9 +156,9 @@ export const EditForm: React.FC<EditFormProps> = ({
       console.log('en EditForm grabar response',response.ok, result);
       if (response.ok) {
         alert("Grabado exitosamente");
-        setTimeout(()=>{
-          onClose();
-        }, 3000);
+        // setTimeout(()=>{
+        //   onClose();
+        // }, 3000);
       } else {
         if (response.status === 400) {
           alert(`${result.error}`);     

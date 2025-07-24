@@ -25,17 +25,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Método no permitido' });
   }
-  // const fechaDocumento = new Date(req.body.fechaDocumento);
-  const { tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification, claseMovimiento, monto, comentario, idFamilia } = JSON.parse(req.body);
+  const { tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification, idClaseMovimiento, monto, comentario, idFamilia } = JSON.parse(req.body);
   const d=fechaDocumento.split('-')[0];
   const m=fechaDocumento.split('-')[1];
   const y=fechaDocumento.split('-')[2]; 
   const fechaDocumentoDate=new Date(y,m-1,d);
-  // console.log('en updateDocMovimiento fechaDocumento',fechaDocumento,d,m,y );
-  // console.log('en updateDocMovimiento fechaDocumentoDate',fechaDocumentoDate );
-  // console.log('en updateDocMovimiento tipoDocumento',tipoDocumento);
-  //  console.log('en updateDocMovimiento req.body',tipoDocumento,  nroDocumento, idCasa, idUserModification, claseMovimiento, monto, comentario, idFamilia);
-  // const casas = await Casa.find({});
   const familias = await Familia.find({ //devuelve un array? y findOne no anda
       mesInicio: { $lte: añoMesActual },
       mesTermino: { $gte: añoMesActual }
@@ -48,8 +42,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const docUsuario=await User.findOne({_id:idUserModification, vigente:true});
   const idUsuario=docUsuario?.idUser;
-  // console.log('en updateDocMovimiento docUsuario',docUsuario,idUsuario);
-  // console.log('en updateDocMovimiento req.body',tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification,idUsuario, idFamilia)
   // Seleccionar el modelo adecuado
   const Model = tipoDocumento === "GASTO" ? DocGasto : DocIngreso;
   // Buscar el nroDocumento más alto
@@ -70,8 +62,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (ultimoNroCarteraGasto && typeof ultimoNroCarteraGasto.nroMovimiento === "number") {
     nuevoNroCarteraGasto = ultimoNroCarteraGasto.nroMovimiento + 1;
   }    
-  // console.log('nuevoNroCarteraGasto',nuevoNroCarteraGasto);
-
   let nuevoNroCarteraIngreso=1;
   const ultimoNroCarteraIngreso = await CarteraIngreso.findOne()
   .sort({nroMovimiento: -1})
@@ -87,7 +77,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 
 
-  let abono = monto;
+  let abono = Number(monto);
   // const fechaDocumento = nuevoDoc.createdAt;
   let nuevoDoc:any;
    
@@ -106,24 +96,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         nroDocumento: nuevoNro,
         idCasa:familia?idCasa:0,
         idUsuario,
-        monto,
-        comentario,//es para los gasstos
+        monto:Number(monto),
+        comentario:comentario||'',//es para los gastos
         claseMovimiento:0,//es para los gastos
         createAt: fechaDocumentoString,
         updatedAt: hoyString,
       });
-      // console.log('en updateDocMovimiento Ingreso nuevoDoc',nuevoDoc);
       await nuevoDoc.save();
-    
-
       const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})
       .sort({ nroDocumento: -1 })      
       .lean() as { nroDocumento?: number } | null;
 
-      // console.log('en updateDocMovimiento docIngreso',docIngreso);
-      const claseMov=(claseMovimiento === 0)? undefined: claseMovimiento;
+      const claseMov:number=(idClaseMovimiento === 0)? undefined: idClaseMovimiento;
       const deudas = await getSaldoCasaFondo(idCasa, claseMov);
-      // console.log('Deudas', deudas, idCasa)
       for (const deuda of deudas) {
         const {
           tipoDocumentoRef,
@@ -151,58 +136,54 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           entradaSalida: 'S',
           monto: aPagar,
          }
-        //  console.log('newCarteraIngreso',newCarteraIngreso)
          nuevoNroCarteraIngreso=nuevoNroCarteraIngreso+1;
          await CarteraIngreso.create(newCarteraIngreso);
        }
     }
+
     if ( tipoDocumento === "GASTO"){
+      const fechaDocumentoString=fechaDocumentoDate.toISOString();
+      const hoyString=hoy.toISOString();
       // // Paso 1: Insertar el documento GASTO
-      nuevoDoc = await DocGasto.create({
-        createAt: new Date(),
+      nuevoDoc ={
+        createAt: fechaDocumentoString,
+        updatedAt: hoyString,
         tipoDocumento,
-        nroDocumento,
-        idCasa,
+        nroDocumento:nuevoNro,
+        idCasa:0,
         idUsuario,
-        claseMovimiento,
-        monto,
-        comentario,
-      });
+        claseMovimiento:Number(idClaseMovimiento),
+        monto:Number(monto),
+        comentario:comentario||'',
+      };
+      console.log('en updateDocMovimiento Egreso nuevoDoc',nuevoDoc);
+      // await nuevoDoc.save();
+
       const newCarteraGasto = {
         nroMovimiento: nuevoNroCarteraGasto,
         tipoDocumento,
-        nroDocumento,
+        nroDocumento:nuevoNro,
         tipoDocumentoRef: tipoDocumento,
-        nroDocumentoRef: nroDocumento,
-        fechaDocumento,
-        fechaMovimiento: new Date(),
-        claseMovimiento,
+        nroDocumentoRef: nuevoNro,
+        createAt: fechaDocumentoString,
+        updatedAt: new Date(),
+        idCasa:0,
+        claseMovimiento:Number(idClaseMovimiento),
         entradaSalida: 'E',
-        monto,
+        monto:Number(monto),
       }
-      console.log('newCarteraGasto',newCarteraGasto)
+      console.log('newCarteraGasto registra Egreso',newCarteraGasto)
       // Insertar en CarteraGasto como ENTRADA
-      // await CarteraGasto.create({
-      //   nroMovimiento: nuevoNroCarteraGasto,
-      //   tipoDocumento,
-      //   nroDocumento,
-      //   tipoDocumentoRef: tipoDocumento,
-      //   nroDocumentoRef: nroDocumento,
-      //   fechaDocumento,
-      //   fechaMovimiento: new Date(),
-      //   claseMovimiento,
-      //   entradaSalida: 'E',
-      //   monto,
-      // });
+      await CarteraGasto.create(newCarteraGasto);
       nuevoNroCarteraGasto=nuevoNroCarteraGasto+1;
       // Paso 2: Obtener ingresos no ocupados
       let ingresos = await getIngresosNoOcupados(1); // idUsuario para obtener idOrganizacion
-      console.log('ingresos',ingresos.length);
+      // console.log('ingresos',ingresos.length);
       // console.log('ingresos[0]',ingresos[0]); 
       // console.log('ingresos[1]',ingresos[1]);
-      // Paso 3: Obtener gastos pendientes (SaldoGasto)
+      // Paso 3: Obtener gastos pendientes (SaldoGasto) para compesar
       let gastosConSaldo = await getSaldoGasto(1); //los gastos que tienen saldo por pagar
-      console.log('gastosConSaldo',gastosConSaldo.length)
+      console.log('gastosConSaldo',gastosConSaldo.length,gastosConSaldo)
       // Paso 4: Compensación cruzada
        for (const ingreso of ingresos) {
         //  console.log('ingreso',ingreso);
@@ -222,8 +203,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (abona > 0){
             const newCarteraGasto = {//se registra en la cartera si hay abono
               nroMovimiento: nuevoNroCarteraGasto,
-              tipoDocumento,
-              nroDocumento,
+              tipoDocumento:ingreso.tipoDocumento,
+              nroDocumento:ingreso.nroDocumento,
               tipoDocumentoRef: gasto.tipoDocumentoRef,
               nroDocumentoRef: gasto.nroDocumentoRef,
               fechaDocumento: ingreso.fechaDocumento,
@@ -232,8 +213,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               entradaSalida: 'S',
               monto: abona,
             }
+            await CarteraGasto.create(newCarteraGasto);
             saldoIngreso -= abona;
             gasto.saldo -= abona;
+            nuevoNroCarteraGasto=nuevoNroCarteraGasto+1;
+            console.log('newCarteraGasto compensa Gasto con Ingreso',newCarteraGasto, abona, saldoIngreso)
           }
           if (gasto.saldo <= 0) {
             gastosConSaldo.splice(i, 1);
@@ -242,53 +226,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
           //console.log('newCarteraGasto',i,saldoIngreso,gasto.saldo)
         }
-
-/*
-        for (let i = 0; i < gastosConSaldo.length && saldoIngreso > 0; ) {
-          const gasto = gastosConSaldo[i];
-
-          if (gasto.ingresoSalda !== claseIngreso) {
-            i++;
-            continue;
-          }
-
-          const montoGasto = gasto.saldo;
-          const abona = Math.min(saldoIngreso, montoGasto);
-          const newCarteraGasto = {
-            tipoDocumento,
-            nroDocumento,
-            tipoDocumentoRef: gasto.tipoDocumentoRef,
-            nroDocumentoRef: gasto.nroDocumentoRef,
-            fechaDocumento: ingreso.fechaDocumento,
-            fechaRegistro: new Date(),
-            claseMovimiento: gasto.claseMovimiento,
-            entradaSalida: 'S',
-            monto: abona,
-          }
-          console.log('newCarteraGasto',newCarteraGasto)
-          // Insertar en CarteraGasto como SALIDA
-          // await CarteraGasto.create({
-          //   tipoDocumento,
-          //   nroDocumento,
-          //   tipoDocumentoRef: gasto.tipoDocumentoRef,
-          //   nroDocumentoRef: gasto.nroDocumentoRef,
-          //   fechaDocumento: ingreso.fechaDocumento,
-          //   fechaRegistro: new Date(),
-          //   claseMovimiento: gasto.claseMovimiento,
-          //   entradaSalida: 'S',
-          //   monto: abona,
-          // });
-
-          saldoIngreso -= abona;
-          gasto.saldo -= abona;
-
-          if (gasto.saldo <= 0) {
-            gastosConSaldo.splice(i, 1);
-          } else {
-            i++;
-          }
-          */
-       //} 
       } //fin del for de ingresos
     }
 

@@ -16,8 +16,8 @@ const carteraIngresoSchema = new Schema({
     entradaSalida:{type: String, required:true},
     monto:{type: Number, required:true},
 },
-{
-    timestamps: true 
-}
+// {
+//     timestamps: true 
+// }
 );
 export const CarteraIngreso = models.CarteraIngreso || model('CarteraIngreso', carteraIngresoSchema,'carteraIngreso');

@@ -41,7 +41,7 @@ export async function getMovimientosPrevios(
         entradaSalida: 'S',
         claseMovimiento: { $in: clasesIngresoPermitidas },
         fechaDate: { $lte: fechaInicio },
-        idCasa: { $gt: 0 }
+        idCasa: { $gte: 0 }//0 contiene el saldo inicial del sistema
       }
     },
     {

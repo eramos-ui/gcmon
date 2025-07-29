@@ -113,19 +113,14 @@ type GridRowProps<T> = {
                   width: columnWidths[String(col.key)] || col.width || "150px", // Usa los mismos anchos que el encabezado
                   padding,
                   borderRight: borderVertical ? `${borderWidth} solid ${borderColor}` : "none",
-                  //display: "flex",
-                  //alignItems:  col.textAlign || "left",
                   textAlign: (col.textAlign)? col.textAlign : (col.type === "number") ?"right":"left",
-                  //justifyContent: col.textAlign || "left",
                   whiteSpace: "nowrap",
                   overflow: "hidden",
                   fontSize,
                 }}
               >
                 {col.renderCell ? col.renderCell(row) : formattedValue}
-                {/* { formattedValue} */}
               </div> 
-
             )
         })}
         {actions.length > 0 && (

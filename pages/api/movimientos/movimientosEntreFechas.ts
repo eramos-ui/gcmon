@@ -22,7 +22,7 @@ const normalizarFechas = (arr: any[]) =>
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
   const { email, fechaInicio, fechaFin, tipoFondo, idCasa  } = req.query;
-  console.log('en movimientosEntreFechas',email, fechaInicio, fechaFin, tipoFondo, idCasa);
+  // console.log('en movimientosEntreFechas',email, fechaInicio, fechaFin, tipoFondo, idCasa);
   const claseMovimiento =  'GASTO_'+tipoFondo;
   const clasesGastoPermitidas = claseMovimientoMap[claseMovimiento as keyof typeof claseMovimientoMap] || [];
   // Paso 1: obtener organización del usuario
@@ -91,6 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             $sort: { fechaDocumento: 1, comentario: 1  } 
     },
   ]);
+  // console.log('rawIngresoPreviosResults',rawIngresoPreviosResults.length )
   const saldoInicialIngreso = rawIngresoPreviosResults.reduce((acc, mov) => {
     return acc + (mov.ingreso || 0);
   },  0 );
@@ -170,7 +171,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 const saldoInicialGasto = rawGastoPreviosResults.reduce((acc, mov) => {
     return acc + (mov.salida || 0);
   },  0 );
-
+// console.log('Ingresos del periodo')
   // Paso 4:los ingresos del periodo
 const rawIngresosPeriodoResults = await CarteraIngreso.aggregate([ 
     {  //convierte fechaDocumento de string a Date
@@ -229,10 +230,21 @@ const rawIngresosPeriodoResults = await CarteraIngreso.aggregate([
         }
     },
     {
+      $project: {
+        _id: 0,
+        fechaDocumento: 1,
+        mesPago: 1,
+        monto: 1,
+        descripcion: 1,
+        tipoDocumento: 1,
+        claseMovimiento: 1
+      }
+    },
+    {
             $sort: { _id: 1  } // ← Ordenar por fechaDocumento (que está en _id)
     },
 ]);
-
+// console.log('Ingresos',rawIngresosPeriodoResults.length,rawIngresosPeriodoResults[0])
 // Paso 5:los gastos del periodo
 const rawGastosPeriodoResults = await CarteraGasto.aggregate([
     {   //convierte fechaDocumento de string a Date

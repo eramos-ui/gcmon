@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CustomButton, CustomButtonProps } from "./CustomButton";
 import { faPlus, faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { GridRow } from "@/components/controls/grid/GridRow";
@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ExportConfig } from "./ExportConfig";
 import { exportToExcel } from "@/utils/exportToExcel";
 import { ColumnConfigType } from "@/types/interfaces";
+
 
 export type CustomGridProps<T> = {
   title?: string; // Título de la grilla
@@ -75,25 +76,51 @@ export const CustomGrid = <T,>({
   );
   const [ currentInternalPage, setCurrentInternalPage ] = useState(currentPage ?? 0);
   const [ selectedGridRow, setSelectedGridRow ]         = useState<T | null>(null);
-
+  const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: 'asc' | 'desc' } | null>(null);
+  const sortedData = useMemo(() => {
+    if (!sortConfig) return data;
   
+    return [...data].sort((a, b) => {
+      const valA = a[sortConfig.key];
+      const valB = b[sortConfig.key];
+  
+      if (valA == null) return 1;
+      if (valB == null) return -1;
+  
+      if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [data, sortConfig]);
+  const columnsToRender = useMemo(
+    () =>
+      columns.filter(c => {
+        if (c.visible === false) return false;
+        // Oculta si la columna pide ocultarse y hay orden activo
+        if (c.hideOnSort && sortConfig?.key) return false;
+        return true;
+      }),
+    [columns, sortConfig]
+  );
+
+  const handleSort = (key: keyof T) => { 
+    setSortConfig((prev) => {
+      if (prev?.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+  };
   useEffect(() => { // Si `currentPage` viene desde props, sincronizar estado interno:
     if (currentPage !== undefined) {
-      // console.log('en CustomGrid useEffect currentPage,currentInternalPage',currentPage,currentInternalPage);
       setCurrentInternalPage(currentPage);
     }
   }, [currentPage]);
-
- 
-    // Calcular índices de paginación
-  const startIndex = currentInternalPage * rowsToShow;
+  const startIndex = currentInternalPage * rowsToShow;    // Calcular índices de paginación
   const endIndex = startIndex + rowsToShow;
-  //console.log('en CustomGrid data',data);
   const totalPages = (data) ? Math.ceil(data.length / rowsToShow):0;
-  //console.log('totalPages',totalPages,startIndex,endIndex);
-  const paginatedData =(data) ? data.slice(startIndex, endIndex):0;
-  // const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 0));
-  // const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
+  // const paginatedData =(data) ? data.slice(startIndex, endIndex):0;
+  const paginatedData = sortedData.slice(startIndex, endIndex);
   const handlePageChange = (newPage: number) => {
     //console.log('en handlePageChange newPage,totalPages',newPage,totalPages, currentPage);
     if (newPage >= 0 && newPage <= totalPages) {
@@ -101,14 +128,12 @@ export const CustomGrid = <T,>({
     }
   };
   const handleRowSelection = (row: T) => {
-    // console.log('en CustomGrid handleRowSelection',title,row,selectable);
     setSelectedGridRow(row);
     if (onRowSelect) {
       onRowSelect(row); // 📌 Notificar al componente padre
     }
-  };
-  // Función para actualizar el ancho de una columna globalmente
-  const updateColumnWidth = (colKey: string, newWidth: string) => {
+  };  
+  const updateColumnWidth = (colKey: string, newWidth: string) => {// Función para actualizar el ancho de una columna globalmente
     setColumnWidths(prevWidths => {
       if (parseInt(prevWidths[colKey] || "150", 10) < parseInt(newWidth, 10)) {
         return { ...prevWidths, [colKey]: newWidth };
@@ -133,9 +158,12 @@ export const CustomGrid = <T,>({
   exportToExcel(fileName, updatedData, updatedColumns);
   };
   const filteredActions: ("edit" | "delete" | "zoom")[] = actions.filter((action): action is "edit" | "delete" | "zoom" => action !== "add");
-  const minWidth = columns
-  .filter((col) => col.visible !== false)
-  .reduce((total, col) => total + parseInt(col.width || "100"), 0) + (actions.includes("edit") || actions.includes("delete") ? 100 : 0);
+  // const minWidth = columns
+  // .filter((col) => col.visible !== false)
+  // .reduce((total, col) => total + parseInt(col.width || "100"), 0) + (actions.includes("edit") || actions.includes("delete") ? 100 : 0);
+  const minWidth = columnsToRender
+  .reduce((total, col) => total + parseInt(col.width || "100", 10), 0)
+  + (actions.includes("edit") || actions.includes("delete") ? 100 : 0);
 
   const getEditableState = (column: ColumnConfigType<T>, row: T) => {
     if (isEditable) {
@@ -166,20 +194,20 @@ export const CustomGrid = <T,>({
         {exportable && <ExportConfig onExport={handleExport } />}
       </div>    
       <div style={{ border: `${borderWidth} solid ${borderColor}`, display: "inline-block", }}> 
-        <GridHeader columns={columns} actions={filteredActions} borderColor={borderColor} borderWidth={borderWidth} padding={padding}
-          borderVertical={borderVertical} columnWidths={columnWidths} fontSize={ fontSize}
+        <GridHeader  actions={filteredActions} borderColor={borderColor} borderWidth={borderWidth} padding={padding} columns={columnsToRender} 
+          borderVertical={borderVertical} columnWidths={columnWidths} fontSize={ fontSize} onSort={handleSort} sortConfig={sortConfig} //columns={columns} 
         />
         <div>
           <div>
             { (paginatedData) ? paginatedData.map((row, rowIndex) => {/* Filas */
-            // if (rowIndex < 3) console.log('row',row,rowIndex)
             return(
               <GridRow key={rowIndex} row={row} actions={filteredActions} onEdit={onEdit} onDelete={onDelete} onZoom={onZoom} 
                 rowHeight={rowHeight} fontSize={ fontSize}
                 padding={padding} borderColor={borderColor} borderWidth={borderWidth} borderVertical={borderVertical}  actionsTooltips={actionsTooltips}
                 actionsPositionTooltips={actionsPositionTooltips} columnWidths={columnWidths} // 📌 Pasamos el estado global de anchos
                 updateColumnWidth={updateColumnWidth} selectable={selectable} onSelect={() => handleRowSelection(row)} isSelected={selectedGridRow === row}
-                columns={columns.map((col) => ({...col, editable: getEditableState(col, row),}))} // 📌 Determina la edición dinámicamente       
+               // columns={columns.map((col) => ({...col, editable: getEditableState(col, row),}))} // 📌 Determina la edición dinámicamente       
+               columns={columnsToRender.map((col) => ({...col, editable: getEditableState(col, row),}))} // 📌 Determina la edición dinámicamente       
                 />
             )
             }): <></>}

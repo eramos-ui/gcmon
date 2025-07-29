@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   await connectDB();
 
   const { email, fechaInicio, fechaFin, tipoFondo  } = req.query;
-  //console.log('en movPeriodo',email, fechaInicio, fechaFin, tipoFondo, idCasa);
+  console.log('en movPeriodo',email, fechaInicio, fechaFin, tipoFondo);
   if (!email || !fechaInicio  || !fechaFin || !tipoFondo) {
     return res.status(400).json({ error: 'Faltan parámetros: email, fechaInicio, fechaFin o tipoFondo' });
   }
@@ -19,6 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       new Date(fechaFin.toString()),
       tipoFondo.toString().toUpperCase(),
     );
+    // console.log('movimientos',movimientos)
     res.status(200).json(movimientos);
   } catch (error) {
     console.error('Error al obtener movimientos periodo:', error);

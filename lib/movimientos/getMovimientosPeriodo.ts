@@ -1,6 +1,9 @@
+//api/movimientos/getMovimientosPeriodo
+/* Se utiliza en el zoom de consulta de movimientos entre fechas*/
 import { CarteraIngreso } from '@/models/CarteraIngreso';
 import { CarteraGasto } from '@/models/CarteraGasto';
 import { User } from '@/models/User';
+import {monthFullMap} from '@/utils/monthMap';  
 
 const claseMovimientoMap = {
     GASTO_EMERGENCIA: [99],
@@ -17,11 +20,11 @@ const claseMovimientoMap = {
     // idCasa:string  
   ) 
   {  
+    console.log('en getMovimientosPeriodo',email, fechaInicio, fechaFin, tipoFondo);
     const claseMovimiento =  'GASTO_'+tipoFondo;
     const clasesGastoPermitidas = claseMovimientoMap[claseMovimiento as keyof typeof claseMovimientoMap] || [];
     // Paso 1: obtener organización del usuario
     const usuario = await User.findOne({ email,vigente: true });
-    // console.log('en getMovimientosPeriodo',email, fechaInicio, fechaFin, tipoFondo, idCasa);
     const idOrganizacion = usuario?.idOrganizacion;
     const clasesIngresoPermitidas= tipoFondo === 'NORMAL' ? [1000] : [1001];
     const fechaInicioDate = new Date(fechaInicio?.toString() || '');
@@ -29,7 +32,8 @@ const claseMovimientoMap = {
     const ingresos = await CarteraIngreso.aggregate([
     {
       $addFields: {
-        fechaDate: { $toDate: "$fechaDocumento" }
+        fechaDate: { $toDate: "$fechaDocumento" },
+        // mesPago: "$mesPago"
       }
     },
     {
@@ -37,8 +41,7 @@ const claseMovimientoMap = {
         tipoDocumento: 'INGRESO',
         entradaSalida: 'S',
         claseMovimiento: { $in: clasesIngresoPermitidas },
-        fechaDate: { $gte: fechaInicio, $lte: fechaFin },
-        // idCasa: { $in: [0, idCasa] }
+        fechaDate: { $gte: fechaInicio, $lte: fechaFin },      
       }
     },
     {
@@ -75,16 +78,44 @@ const claseMovimientoMap = {
       $group: {
         _id: {
           fechaDocumento: "$fechaDocumento",
-          idCasa: "$idCasa"
+          idCasa: "$idCasa",
+          mesPago:"$mesPago",
         },
         comentario: { $first: { $concat: ["Casa ", { $toString: "$casa.codigoCasa" }, ", ", "$familia.familia"] } },
         fechaDocumento: { $first: "$fechaDocumento" },
-        ingreso: { $sum: "$monto" },
-        salida: { $sum: 0 }
+        ingreso: { $sum: "$monto" },    
+        salida: { $sum: 0 },
+        
       }
-    },
+    },  
     { $sort: { "_id.fechaDocumento": 1 } }
   ]);
+  const ing= ingresos.map((r) => {
+    const fecha=r.fechaDocumento.split('T')[0];
+    const [year, month,day] =fecha.split("-") || [];  
+    const mes=monthFullMap[Number(month)];
+    const mesAñoPago=r._id.mesPago;
+    const añoPagoX=Math.floor(mesAñoPago/100);
+    const mesPagoX=Math.floor(mesAñoPago-añoPagoX*100);
+  
+    const mesQuePaga= monthFullMap[mesPagoX]+' '+ String(añoPagoX);
+    // console.log( Math.floor(mesAñoPago/100) ,mesPagoX)
+    // const mesPagox=Math.floor(mesAñoPago);
+    // const añoPagox=mesAñoPago+mesPagox*100
+    // console.log('r',mesPagox,añoPagox)
+    return {
+      fechaDocumento:fecha,
+      comentario: r.comentario,
+      mesPago:mesQuePaga,
+      ingreso:r.ingreso,
+      salida:0,
+      tipoFondo:'Ingreso '+ tipoFondo,
+      idCasa:r._id.idCasa
+    }
+    }
+  );
+// console.log('ingreso',ingresos.length,ing);
+// return {ing}
   const gastos = await CarteraGasto.aggregate([
     {
       $addFields: {
@@ -153,6 +184,21 @@ const claseMovimientoMap = {
     },
     { $sort: { "_id.fechaDocumento": 1 } }
   ]);
-
-  return { ingresos, gastos };
+  const gast= gastos.map((r) => {
+    const fecha=r.fechaDocumento.split('T')[0];
+    const [year, month,day] =fecha.split("-") || [];  
+    const mes=monthFullMap[Number(month)];;
+    //console.log('r.fechaDocumento',r.fechaDocumento,typeof(r.fechaDocumento),fecha,year,month, day, mes)
+    return {
+      fechaDocumento:fecha,
+      comentario: r.comentario,
+      mesPago: day + ' de '+ mes,
+      ingreso:0,
+      salida:r.salida,
+      tipoFondo:'Gasto' + tipoFondo,
+      idCasa:0
+    }
+    }
+  );
+    return { ingresos: ing, gastos:gast};
 }

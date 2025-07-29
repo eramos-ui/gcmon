@@ -21,7 +21,7 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
   const [ loading, setLoading ]                                    = useState(true);
   const { menuData, refreshMenu, setUser: setUserInContext, user } = useMenu();
 
-    // console.log('AppContent menuData',menuData);
+  // console.log('AppContent menuData',menuData);
   useEffect(() => {   
     //console.log('1 en useEffect status',status,pathname);
     if (status === 'loading') {

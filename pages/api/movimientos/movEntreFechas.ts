@@ -6,6 +6,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 // import { User } from '@/models/User';
 import { getMovimientosPrevios } from '@/lib/movimientos/getMovimientosPrevios';
 import { getMovimientosPeriodo } from '@/lib/movimientos/getMovimientosPeriodo';
+import { getIngresosNoOcupados } from '@/lib/movimientos/getIngresosNoOcupados';
 
 const claseMovimientoMap = {
     GASTO_EMERGENCIA: [99],
@@ -22,7 +23,7 @@ const normalizarFechas = (arr: any[]) =>
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
   const { email, fechaInicio, fechaFin, tipoFondo, idCasa  } = req.query;
-  console.log('en movEntreFechas',email, fechaInicio, fechaFin, tipoFondo, idCasa);
+  console.log('en movEntreFechas**',email, fechaInicio, fechaFin, tipoFondo, idCasa);
   if (!email || !fechaInicio || !fechaFin || !tipoFondo) {
     return res.status(400).json({ error: 'Faltan parámetros: email, fechaInicio, fechaFin o tipoFondo' });
   }
@@ -34,6 +35,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     tipoFondo.toString().toUpperCase()
   );
   const rawIngresoPreviosResults=movimientos.ingresos;
+  console.log('rawIngresoPreviosResults ingresos-gastos',movimientos.ingresos.length,movimientos.gastos.length,)
+  // console.log('rawIngresoPreviosResults ingresos',movimientos.ingresos)
   const rawGastoPreviosResults=movimientos.gastos;
   const saldoInicialIngreso = rawIngresoPreviosResults.reduce((acc, mov) => {
     return acc + (mov.ingreso || 0);
@@ -62,9 +65,14 @@ const filaInicial = {
   salida: saldoInicialGasto,
   saldo: saldoInicial
 };
+// console.log('rawIngresosPeriodoResults',rawIngresosPeriodoResults[0],rawIngresosPeriodoResults[1])
 const ingresos = normalizarFechas(rawIngresosPeriodoResults);
-const gastos = normalizarFechas(rawGastosPeriodoResults);
+// console.log('en movimientosEntreFecha ingresos',ingresos[0],ingresos[1])
+// res.status(200).json(ingresos);
 
+
+ const gastos = normalizarFechas(rawGastosPeriodoResults);
+//  console.log('gastos', gastos)
 
 const movimientosFull = ingresos.concat(gastos).sort(
     (a, b) => new Date(a.fechaDocumento).getTime() - new Date(b.fechaDocumento).getTime()
@@ -74,7 +82,8 @@ let saldo = 0;
 const movimientosConSaldo = movimientosConSaldoInicial.map(mov => {
   const id=mov._id;
   let idCasa = 0;
-  if (mov.ingreso > 0 && mov.salida === 0) idCasa =id.idCasa; //para hacer un zoom en la grilla si idCasa>0  y es ingreso
+  if (mov.ingreso > 0 && mov.salida === 0) idCasa =mov.idCasa; //para hacer un zoom en la grilla si idCasa>0  y es ingreso
+  // console.log('mov',mov)
   saldo += (mov.ingreso || 0) - (mov.salida || 0);
   return {
     idCasa,
@@ -82,6 +91,6 @@ const movimientosConSaldo = movimientosConSaldoInicial.map(mov => {
     saldo
   };
 })
-res.status(200).json(movimientosConSaldo);
+ res.status(200).json(movimientosConSaldo);
 
 }

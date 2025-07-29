@@ -6,11 +6,12 @@ import { connectDB } from '@/lib/db';
 import { CarteraIngreso } from '@/models/CarteraIngreso';
 import { CarteraAggregated } from '@/types/interfaceGastosComunes';
 import { NextApiRequest, NextApiResponse } from 'next';
-
-const monthMap: { [key: number]: string } = {
-  1: 'ene', 2: 'feb', 3: 'mar', 4: 'abr', 5: 'may', 6: 'jun',
-  7: 'jul', 8: 'ago', 9: 'sep', 10: 'oct', 11: 'nov', 12: 'dic'
-};
+import {monthMap} from '@/utils/monthMap';
+  
+// const monthMap: { [key: number]: string } = {
+//   1: 'ene', 2: 'feb', 3: 'mar', 4: 'abr', 5: 'may', 6: 'jun',
+//   7: 'jul', 8: 'ago', 9: 'sep', 10: 'oct', 11: 'nov', 12: 'dic'
+// };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB(); 

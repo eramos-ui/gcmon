@@ -29,7 +29,7 @@ export async function getIngresosNoOcupados(idOrganizacion: number) {
       }
     }
   ]);
-//    console.log('ingresosPagados',ingresosPagados.length) //(en SQL 1317 )
+  console.log('ingresosPagados',ingresosPagados.length) //(en SQL 1296 hasta el 20250709 )
 
   
 const ingresosPagadosConIngresoSalda=ingresosPagados.map(ingreso=>{
@@ -41,10 +41,10 @@ const ingresosPagadosConIngresoSalda=ingresosPagados.map(ingreso=>{
       ingresoSalda: clase?.ingresoSalda
     };
   });
-//   console.log('ingresosPagadosConIngresoSalda',ingresosPagadosConIngresoSalda.length)
-  const gastosDesdeIngresoAgrupados:any[]=ingresosPagadosConIngresoSalda.map(ingreso=>{
+  console.log('ingresosPagadosConIngresoSalda',ingresosPagadosConIngresoSalda.length)
+  // const gastosDesdeIngresoAgrupados:any[]=ingresosPagadosConIngresoSalda.map(ingreso=>{
 
-  });
+  // });
 
   const gastosDesdeIngreso= await CarteraGasto.aggregate([//ingresos que se han utilizado en CarteraGasto (en  SDQL 965)
     {
@@ -73,7 +73,7 @@ const ingresosPagadosConIngresoSalda=ingresosPagados.map(ingreso=>{
       }
     }
   ]);
-//   console.log('gastosDesdeIngreso',gastosDesdeIngreso.length)
+   console.log('gastosDesdeIngreso',gastosDesdeIngreso.length)
   const result: any[] = [];
   for (const ingreso of ingresosPagados) {
        const tipoDocumento=ingreso._id.tipoDocumento;
@@ -90,7 +90,6 @@ const ingresosPagadosConIngresoSalda=ingresosPagados.map(ingreso=>{
             saldo=monto-gasto.monto;
         }
         if (saldo >0){
-
             const docIngreso={
                 tipoDocumento: ingreso._id.tipoDocumento,
                 nroDocumento: ingreso._id.nroDocumento,
@@ -102,9 +101,9 @@ const ingresosPagadosConIngresoSalda=ingresosPagados.map(ingreso=>{
         } //fin del if saldo >0
 
     } //fin del for
-    // console.log('result',result.length);
+    console.log('result',result.length);
     result.sort((a, b) => a.nroDocumento - b.nroDocumento);
-    // let fila=1; const newResult=result.map(r=>{     return {...r, fila:fila++} });
-    // console.log('result',newResult.filter(r=>r.fila > 300));
+    let fila=1; const newResult=result.map(r=>{     return {...r, fila:fila++} });
+    console.log('result',newResult.filter(r=>r.fila <10 && r.claseMovimiento===1000));
   return result;
 }

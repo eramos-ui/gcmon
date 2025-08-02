@@ -30,6 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const m=fechaDocumento.split('-')[1];
   const y=fechaDocumento.split('-')[2]; 
   const fechaDocumentoDate=new Date(y,m-1,d);
+  console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento)
+
   const familias = await Familia.find({ //devuelve un array? y findOne no anda
       mesInicio: { $lte: añoMesActual },
       mesTermino: { $gte: añoMesActual }
@@ -146,8 +148,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const hoyString=hoy.toISOString();
       // // Paso 1: Insertar el documento GASTO
       nuevoDoc =new Model({
-        createdAt: fechaDocumentoString,
-        updatedAt: hoyString,
+        createdAt: hoyString,
+        updatedAt: fechaDocumentoString,
         tipoDocumento,
         nroDocumento:nuevoNro,
         idCasa:0,
@@ -157,7 +159,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         comentario: comentario||'',
       });
       console.log('en updateDocMovimiento Egreso nuevoDoc',nuevoDoc);
-      //await nuevoDoc.save();
+      await nuevoDoc.save();
+      // return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
+      // return;   
 
       const newCarteraGasto = {
         nroMovimiento: nuevoNroCarteraGasto,
@@ -174,17 +178,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       console.log('newCarteraGasto registra Egreso',newCarteraGasto)
       // Insertar en CarteraGasto como ENTRADA
-      //await CarteraGasto.create(newCarteraGasto);
+      await CarteraGasto.create(newCarteraGasto);
       nuevoNroCarteraGasto=nuevoNroCarteraGasto+1;
       // Paso 2: Obtener ingresos no ocupados
       let ingresos = await getIngresosNoOcupados(1); // idUsuario para obtener idOrganizacion
-      console.log('ingresos',ingresos.length);
-      console.log('ingresos[0]',ingresos[0]); 
-      console.log('ingresos[1]',ingresos[1]);
+      // console.log('ingresos',ingresos.length);
+      // console.log('ingresos[0]',ingresos[0]); 
+      // console.log('ingresos[1]',ingresos[1]);
       // Paso 3: Obtener gastos pendientes (SaldoGasto) para compesar
       let gastosConSaldo = await getSaldoGasto(1); //los gastos que tienen saldo por pagar
       console.log('gastosConSaldo',gastosConSaldo.length,gastosConSaldo)
-return res.status(200).json({ message: 'Documento creado e imputado correctamente', nuevoDoc});
+// return res.status(200).json({ message: 'Documento creado e imputado correctamente', nuevoDoc});
 
       // Paso 4: Compensación cruzada
        for (const ingreso of ingresos) {
@@ -231,7 +235,5 @@ return res.status(200).json({ message: 'Documento creado e imputado correctament
         }
       } //fin del for de ingresos
     }
-
-
     return res.status(200).json({ message: 'Documento creado e imputado correctamente', nuevoDoc});
 }

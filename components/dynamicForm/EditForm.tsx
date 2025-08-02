@@ -143,22 +143,23 @@ export const EditForm: React.FC<EditFormProps> = ({
       console.log('en FormPage grabar no hay cambios');
       return;
     } 
-    // console.log('en EditForm grabar updateValues',updateValues);return;   
+    // console.log('en EditForm grabar updateValues',values, values.descripcion);return;   
     const apiSaveForms=`/api/${apiSaveForm}`;
-    const body={...updateValues, formId:formId,  idUserModification:session?.user.id};//siempre agrega el idUserModification
-    console.log('en EditForm grabar body',body);
+    const comentario=(values.descripcion)?values.descripcion:'';
+    const body={...updateValues,comentario, formId:formId,  idUserModification:session?.user.id};//siempre agrega el idUserModification
+
      try {
       const response = await fetch(`${apiSaveForms}`, {
         method: 'POST',    
         body: JSON.stringify(body),
       });
       const result=await response.json();
-      console.log('en EditForm grabar response',response.ok, result);
+      // console.log('en EditForm grabar response',response.ok, result);
       if (response.ok) {
         alert("Grabado exitosamente");
-        // setTimeout(()=>{
-        //   onClose();
-        // }, 3000);
+        setTimeout(()=>{
+          onClose();
+        }, 2000);
       } else {
         if (response.status === 400) {
           alert(`${result.error}`);     

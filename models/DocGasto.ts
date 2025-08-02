@@ -3,7 +3,8 @@ import mongoose from 'mongoose';
 const { Schema, model, models } = mongoose;
 
 const docGastoSchema = new Schema({
-    createdAt:{type:Date, required:true},
+    createdAt:{type:String, required:true},
+    updatedAt:{type:String, required:true},
     tipoDocumento:{type: String, required:true},
     nroDocumento:{type: Number, required:true},
     idCasa:{type: Number, required:true},

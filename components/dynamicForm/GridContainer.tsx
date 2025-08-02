@@ -27,8 +27,9 @@ interface GridContainerProps {
 const GridContainer: React.FC<GridContainerProps> = ({ columns, rows, rowToShow=5, actions, onEdit, 
     onDelete, columnWidths, editFormConfig, label, objectGrid, handleAdd, table }) => {
     const [ page, setPage ]     = useState(0);
-    // console.log('en GridContainer editFormConfig', editFormConfig)
-    const totalPages = Math.ceil(rows.length / rowToShow);
+    // console.log('en GridContainer editFormConfig', editFormConfig,rows.length,rowToShow)
+    if (rows.length <= 0)  return null; 
+    const totalPages = Math.ceil(rows.length /  rowToShow);
     const start = page * rowToShow;
     const end = start + rowToShow;
     const visibleRows = rows.slice(start, end);

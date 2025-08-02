@@ -43,7 +43,12 @@ const claseMovimientoMap = {
     const ingresos = await CarteraIngreso.aggregate([
     {
       $addFields: {
-        fechaDate: { $toDate: "$fechaDocumento" },
+        fechaDate: {
+          $dateFromString: {
+            dateString: "$fechaDocumento",
+            timezone: "America/Santiago"  // Usa la zona horaria correcta
+          }
+        }
       }
     },
     {
@@ -96,7 +101,7 @@ const claseMovimientoMap = {
     {
       $group: {
         _id: {
-          fechaDocumento: "$fechaDocumento",
+          fechaDocumento: "$fechaDate",
           idCasa: "$idCasa",
           mesPago:"$mesPago",
           claseMovimiento:"$claseMovimiento",
@@ -105,6 +110,7 @@ const claseMovimientoMap = {
         },
         comentario: { $first: { $concat: ["Casa ", { $toString: "$casa.codigoCasa" }, ", ", "$familia.familia"] } },
         fechaDocumento: { $first: "$fechaDocumento" },
+        // fechaDocumento: {$first: "$fechaDate" },
         ingreso: { $sum: "$monto" },    
         salida: { $sum: 0 },
         docIngreso: { $first: "$docIngreso" } 
@@ -112,7 +118,7 @@ const claseMovimientoMap = {
     },  
     { $sort: { "_id.fechaDocumento": 1 } }
   ]);
-  //  console.log('ingresos en getIngresosPeriodo',ingresos)
+   //console.log('ingresos en getIngresosPeriodo',ingresos)
   // const docIngreso=await DocIngreso.find({idCasa:`${idCasa}`});  console.log('docIngresos de la casa',docIngreso.length)
    const ing= ingresos.map((r) => {
     const fecha=r.fechaDocumento.split('T')[0];
@@ -127,6 +133,7 @@ const claseMovimientoMap = {
     return {
       fechaDocumento:fecha,
       comentario: r.comentario,
+      numMesPago:r._id.mesPago,
       mesPago:mesQuePaga,
       montoPagado:r.docIngreso.monto,   
       ingreso:r.ingreso,
@@ -137,6 +144,10 @@ const claseMovimientoMap = {
     }
     }
   );
-  // console.log('ingreso',ing)
- return { ingresos: ing};
+  const ordenado = ing.sort((a, b) => 
+    new Date(a.fechaDocumento).getTime() - new Date(b.fechaDocumento).getTime() ||
+    a.numMesPago - b.numMesPago
+  );
+  //  console.log('ingreso',ordenado)
+ return { ingresos: ordenado};
 }

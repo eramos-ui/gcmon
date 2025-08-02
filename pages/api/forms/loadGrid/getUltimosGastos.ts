@@ -16,23 +16,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await connectDB();
 
     const docs = await DocGasto.aggregate([
-      { $sort: { createAt: -1 } },
-      { $limit: 20 },
+      { $sort: { nroDocumento: -1 } },
+      { $limit: 5 },
       {
-        $addFields: {
-          fechaDate: { $toDate: "$createAt" }
+        $addFields: {//grabado como string
+          fechaDate: { $toDate: "$createAt" 
+            
+          }
         }
+        // $addFields: {//si ed Date
+        //   fechaDate: {
+        //     $dateFromString: {
+        //       dateString: "$createdAt",
+        //       timezone: "America/Santiago"  // Usa la zona horaria correcta
+        //     }
+        //   }
+        // }
       },
       {
         $addFields: {
           nroGasto: { $toString: "$nroDocumento" }
         }
       },
-      // {
-      //   $addFields: {
-      //     key: { $toString: "$nroDocumento" }
-      //   }
-      // },
+    
       {
         $lookup: {
           from: 'claseMovimiento',
@@ -58,6 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     ]);
+    console.log('docs',docs)
     const formattedDocs = docs.map(doc => {
       const dateObj = new Date(doc.fechaDate); // 👈 Conversión necesaria
       return {
@@ -66,6 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fechaDocumento: formatDateToDDMMYYYY(dateObj),
       };
     });
+    // console.log( 'formattedDocs',formattedDocs)
     res.status(200).json(formattedDocs);
   } catch (error) {
     console.error('Error obteniendo documentos:', error);

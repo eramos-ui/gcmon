@@ -177,18 +177,19 @@ const claseMovimientoMap = {
           comentario: "$descripcion"
         },
         comentario: { $first: "$descripcion" },
-        fechaDocumento: { $first: "$fechaDocumento" },
+        fechaDocumento: { $first: "$doc.createAt" },//fecha de documento en doc
         ingreso: { $sum: 0 },
         salida: { $sum: "$monto" }
       }
     },
-    { $sort: { "_id.fechaDocumento": 1 } }
+    { $sort: { "_id.fechaDocumento": 1 } }//este es el de la cartera
   ]);
-  // console.log('gastos',gastos.length,gastos[0],gastos[1]);
+  //  console.log('gastos',gastos.length,gastos[0],gastos[1]);
+  //  console.log('gastos',gastos.length,gastos);
   
   const gast= gastos.map((r) => {
-    console.log('r.fechaDocumento',r.fechaDocumento,typeof r.fechaDocumento,r)
-    const fecha=r.fechaDocumento.split('T')[0];
+    // console.log('r.fechaDocumento',r)
+    const fecha=r.fechaDocumento.split('T')[0];//el del doc que es string
     const [year, month,day] =fecha.split("-") || [];  
     const mes=monthFullMap[Number(month)];;
     //console.log('r.fechaDocumento',r.fechaDocumento,typeof(r.fechaDocumento),fecha,year,month, day, mes)

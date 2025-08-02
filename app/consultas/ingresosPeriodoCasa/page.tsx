@@ -16,8 +16,9 @@ import { LoadingIndicator } from '@/components/general/LoadingIndicator';
     { key: "idCasa", label: "idCasa", captionPosition: "top",visible: false, editable: false, width: '50px', type: "number", options: undefined },
     { key: "fechaDocumento", label: "Fecha" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "Date", options: undefined}, 
     { key: "comentario", label: "Comentario/Casa" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined, sortable: true  }, 
-    { key: "ingreso", label: "Ingreso" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "number", options: undefined }, 
+    { key: "montoPagado", label: "Total ingreso" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
     { key: "asignado", label: "Asignado a" , captionPosition: "top", visible: true, editable: false, width: '180px', type: "string", options: undefined, sortable: true  }, 
+    { key: "ingreso", label: "Monto asignado" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
     { key: "mesPago", label: "Mes paga" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined, sortable: true}, 
     { key: "saldo", label: "Saldo" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "number", options: undefined, hideOnSort: true, }, 
 
@@ -78,7 +79,7 @@ const IngresosPeriodoPage = () => {
         const idCasa=familiaFull?.idCasa || 0;
         const response = await fetch(`/api/movimientos/ingresosCasaPeriodo?fechaInicio=${fechaInicioFormatted}&fechaFin=${fechaFinFormatted}&tipoFondo=${informe}&email=${email}&idCasa=${idCasa}`);
         const data = await response.json();
-        // console.log('familia',familiaFull,idCasa);
+        //  console.log('familia',familiaFull,idCasa);
         movs=data.ingresos;
         const movimientos=movs.map((mov:any) => ({
             ...mov,
@@ -95,6 +96,7 @@ const IngresosPeriodoPage = () => {
                 saldo
             };
         });
+        // console.log('en Movimiento por casa perido',movimientosConSaldo)
         setRows(movimientosConSaldo);
         setLoading(false);
         setIsModalOpen(true);

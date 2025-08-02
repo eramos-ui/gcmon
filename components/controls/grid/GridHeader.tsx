@@ -21,7 +21,7 @@ type GridHeaderProps<T> = {// <T> indica genérico
   //const MAX_COLUMN_WIDTH = 200; // 📌 Define el ancho máximo por columna
   export const GridHeader = <T,>({ columns, actions, borderColor, borderWidth, padding, borderVertical = false, 
       columnWidths, fontSize, onSort, sortConfig }: GridHeaderProps<T>) => {
-      // console.log('en GridHeader columns',columns)
+    //  console.log('en GridHeader columnWidths',columnWidths)
     return (
       <div
         style={{
@@ -43,7 +43,7 @@ type GridHeaderProps<T> = {// <T> indica genérico
                 : <FontAwesomeIcon icon={faSortDown} style={{ color: "#0d6efd" }} />
               : <FontAwesomeIcon icon={faSort} style={{ color: "#6c757d" }} />//ícono incial para mosrtar que la columna es ordenable
             : "";
-
+// console.log('col',col.key,columnWidths[String(col.key)],col.width, columnWidths[String(col.key)] || col.width || "150px")
             return(
             <div
               key={String(col.key)}

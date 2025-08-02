@@ -31,7 +31,7 @@ const claseMovimientoMap = {
     const fechaFinDate = new Date(fechaFin?.toString() || '');
 
     const matchStage: any = {
-      tipoDocumento: 'INGRESO',
+      tipoDocumento: 'INGRESO',      
       entradaSalida: 'S',
       fechaDate: { $gte: fechaInicio, $lte: fechaFin },
     };
@@ -48,13 +48,6 @@ const claseMovimientoMap = {
     },
     {
       $match: matchStage
-      // $match: {
-      //   tipoDocumento: 'INGRESO',
-      //   entradaSalida: 'S',
-      //   fechaDate: { $gte: fechaInicio, $lte: fechaFin }, 
-        // idCasa:idCasa,
-       //}
-       
     },
     {
       $lookup: {
@@ -87,24 +80,41 @@ const claseMovimientoMap = {
     },
     { $unwind: "$casa" },
     {
+      $lookup: {//join con docIngreso
+        from: "docIngreso",
+        localField: "nroDocumento",
+        foreignField: "nroDocumento",
+        as: "docIngreso"
+      }
+    },
+    {
+      $unwind: {
+        path: "$docIngreso",
+        preserveNullAndEmptyArrays: true // si no siempre hay docIngreso relacionado
+      }
+    },
+    {
       $group: {
         _id: {
           fechaDocumento: "$fechaDocumento",
           idCasa: "$idCasa",
           mesPago:"$mesPago",
-          claseMovimiento:"$claseMovimiento"
+          claseMovimiento:"$claseMovimiento",
+          nroDocumento:"$nroDocumento",
+
         },
         comentario: { $first: { $concat: ["Casa ", { $toString: "$casa.codigoCasa" }, ", ", "$familia.familia"] } },
         fechaDocumento: { $first: "$fechaDocumento" },
         ingreso: { $sum: "$monto" },    
         salida: { $sum: 0 },
-        
+        docIngreso: { $first: "$docIngreso" } 
       }
     },  
     { $sort: { "_id.fechaDocumento": 1 } }
   ]);
-  // console.log('ingresos en getIngresosPeriodo',ingresos)
-  const ing= ingresos.map((r) => {
+  //  console.log('ingresos en getIngresosPeriodo',ingresos)
+  // const docIngreso=await DocIngreso.find({idCasa:`${idCasa}`});  console.log('docIngresos de la casa',docIngreso.length)
+   const ing= ingresos.map((r) => {
     const fecha=r.fechaDocumento.split('T')[0];
     const [year, month,day] =fecha.split("-") || [];  
     const mes=monthFullMap[Number(month)];
@@ -118,6 +128,7 @@ const claseMovimientoMap = {
       fechaDocumento:fecha,
       comentario: r.comentario,
       mesPago:mesQuePaga,
+      montoPagado:r.docIngreso.monto,   
       ingreso:r.ingreso,
       salida:0,
       tipoFondo:'Ingreso '+ tipoFondo,
@@ -126,6 +137,6 @@ const claseMovimientoMap = {
     }
     }
   );
-//  console.log('ingreso',ing)
+  // console.log('ingreso',ing)
  return { ingresos: ing};
 }

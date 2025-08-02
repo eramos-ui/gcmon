@@ -16,7 +16,7 @@ import { LoadingIndicator } from "@/components/general/LoadingIndicator";
 const columns:ColumnConfigType<GridRowType>[] = [
     { key: "idCasa", label: "idCasa", captionPosition: "top",visible: false, editable: false, width: '50px', type: "number", options: undefined },
     { key: "fechaDocumento", label: "Fecha" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined }, 
-    { key: "comentario", label: "Comentario/Casa" , captionPosition: "top", visible: true, editable: false, width: '200px', type: "string", options: undefined }, 
+    { key: "comentario", label: "Comentario/Casa" , captionPosition: "top", visible: true, editable: false, width: '400px', type: "string",textAlign:"left", options: undefined }, 
     { key: "ingreso", label: "Ingreso" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
     { key: "salida", label: "Salida" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
     { key: "saldo", label: "Saldo" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
@@ -60,7 +60,7 @@ const MovimientosPeriodoPage = () => {
         setLoading(true);
         const response = await fetch(`/api/movimientos/movEntreFechas?fechaInicio=${fechaInicioFormatted}&fechaFin=${fechaFinFormatted}&tipoFondo=${informe}&email=${email}`);
         const data = await response.json();
-        // console.log('data',data);
+        //  console.log('data',data);
         const rows = data.map((row: any) => {
           const fechaDocumentoFormatted=formatStringDateToDDMMYYYY(row.fechaDocumento,'/');
           return {

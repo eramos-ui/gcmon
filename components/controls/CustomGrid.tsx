@@ -173,7 +173,7 @@ export const CustomGrid = <T,>({
   };
   return (
   <>
-   {/* { console.log('JSX selectedRow',selectedRow)} */}
+   {/* { console.log('JSX selectedRow',columnWidths)} */}
     <div
       style={{ marginBottom, width: gridWidth,  overflowX: "auto", fontSize,  }}
     >

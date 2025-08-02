@@ -41,7 +41,7 @@
     "**/*.tsx", 
     ".next/types/**/*.ts",
     "lib/api.ts",
-    "scripts/**/*", "app/consultas/ingresosPeriodo",
+    "scripts/**/*", "app/consultas/ingresosPeriodoCasa",
   ],
   "exclude": [
     "node_modules"

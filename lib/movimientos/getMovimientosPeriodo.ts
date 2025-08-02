@@ -163,7 +163,7 @@ const claseMovimientoMap = {
       $addFields: {
         descripcion: {
           $cond: [
-            { $in: ["$claseMovimiento", [98]] },
+            { $in: ["$claseMovimiento", [99]] },
             "$doc.comentario",
             "$clase.descripcion"
           ]
@@ -184,6 +184,7 @@ const claseMovimientoMap = {
     },
     { $sort: { "_id.fechaDocumento": 1 } }
   ]);
+  // console.log('gastos',gastos.length,gastos[0],gastos[1]);
   const gast= gastos.map((r) => {
     const fecha=r.fechaDocumento.split('T')[0];
     const [year, month,day] =fecha.split("-") || [];  

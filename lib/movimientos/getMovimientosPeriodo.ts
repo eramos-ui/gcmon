@@ -185,7 +185,9 @@ const claseMovimientoMap = {
     { $sort: { "_id.fechaDocumento": 1 } }
   ]);
   // console.log('gastos',gastos.length,gastos[0],gastos[1]);
+  
   const gast= gastos.map((r) => {
+    console.log('r.fechaDocumento',r.fechaDocumento,typeof r.fechaDocumento,r)
     const fecha=r.fechaDocumento.split('T')[0];
     const [year, month,day] =fecha.split("-") || [];  
     const mes=monthFullMap[Number(month)];;

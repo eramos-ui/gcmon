@@ -19,9 +19,9 @@ import { Familia } from '@/models/Familia';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
   const hoy = new Date();
-    const mes = hoy.getMonth() + 1;
-    const año = hoy.getFullYear();
-    const añoMesActual = año * 100 + mes;
+  const mes = hoy.getMonth() + 1;
+  const año = hoy.getFullYear();
+  const añoMesActual = año * 100 + mes;
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Método no permitido' });
   }
@@ -30,8 +30,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const m=fechaDocumento.split('-')[1];
   const y=fechaDocumento.split('-')[2]; 
   const fechaDocumentoDate=new Date(y,m-1,d);
-  console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento)
-
+  const fechaDocumentoString=fechaDocumentoDate.toISOString();
+  console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento,fechaDocumentoDate,fechaDocumentoString)
+  // return res.status(405).json({ message: 'Probando' });
   const familias = await Familia.find({ //devuelve un array? y findOne no anda
       mesInicio: { $lte: añoMesActual },
       mesTermino: { $gte: añoMesActual }
@@ -83,16 +84,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // const fechaDocumento = nuevoDoc.createdAt;
   let nuevoDoc:any;
    
-  if ( tipoDocumento === "INGRESO"){
+  if ( tipoDocumento === "INGRESO"){//en los documentos las fechas creteAt y updatedAt son string y en las carteras fechaMovimiento y fechaDocumento son Date
       if (!idFamilia ) {
         return res.status(400).json({ error: "idFamilia debe ser obligatorio para 'INGRESO'" });
       }
       const idFamiliaNumber=Number(idFamilia);
       const familia=familias.find(familia => familia.idFamilia === idFamiliaNumber);
       const idCasa=familia?familia.idCasa:0;
-      const fechaDocumentoString=fechaDocumentoDate.toISOString();
+      
       const hoyString=hoy.toISOString();
-      // console.log('en updateDocMovimiento fechaDocumentoString',fechaDocumentoString,hoyString);
       nuevoDoc = new Model({
         tipoDocumento,
         nroDocumento: nuevoNro,
@@ -101,8 +101,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         monto:Number(monto),
         comentario:comentario||'',//es para los gastos
         claseMovimiento:0,//es para los gastos
-        createAt: fechaDocumentoString,
-        updatedAt: hoyString,
+        createAt:fechaDocumentoString,//fecha de movimiennto en Doc es string
+        updatedAt:  hoyString,//fechaDocumento en Doc es string
       });
       await nuevoDoc.save();
       const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})
@@ -130,8 +130,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           nroDocumento: nuevoNro,
           tipoDocumentoRef,
           nroDocumentoRef,
-          fechaDocumento:fechaDocumentoString,
-          fechaMovimiento: hoyString,
+          fechaDocumento:fechaDocumentoDate,//en cartera es Date
+          fechaMovimiento: hoy,//en cartera es Date
           idCasa, 
           mesPago,
           claseMovimiento: claseMovimientoDeuda,
@@ -144,12 +144,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if ( tipoDocumento === "GASTO"){
-      const fechaDocumentoString=fechaDocumentoDate.toISOString();
       const hoyString=hoy.toISOString();
       // // Paso 1: Insertar el documento GASTO
       nuevoDoc =new Model({
-        createdAt: hoyString,
-        updatedAt: fechaDocumentoString,
+        createAt: fechaDocumentoString,// en Doc es string
+        updatedAt: hoyString,// en Doc es string
         tipoDocumento,
         nroDocumento:nuevoNro,
         idCasa:0,
@@ -169,8 +168,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         nroDocumento:nuevoNro,
         tipoDocumentoRef: tipoDocumento,
         nroDocumentoRef: nuevoNro,
-        fechaDocumento: fechaDocumentoString,
-        fechaMovimiento: hoyString,
+        fechaDocumento: fechaDocumentoDate,//en cartera es Date
+        fechaMovimiento: hoy,//en cartera es Date
         idCasa:0,
         claseMovimiento:Number(idClaseMovimiento),
         entradaSalida: 'E',
@@ -213,8 +212,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               nroDocumento:ingreso.nroDocumento,
               tipoDocumentoRef:tipoDocumento,
               nroDocumentoRef: nuevoNro,
-              fechaDocumento: fechaDocumentoString,
-              fechaMovimiento:hoyString,
+              fechaDocumento: fechaDocumentoDate, //en cartera es Date
+              fechaMovimiento: hoy,//en cartera es Date
               claseMovimiento: gasto.claseMovimiento,
               entradaSalida: 'S',
               idCasa:0,
@@ -236,4 +235,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       } //fin del for de ingresos
     }
     return res.status(200).json({ message: 'Documento creado e imputado correctamente', nuevoDoc});
+
 }

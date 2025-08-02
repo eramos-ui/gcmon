@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     tipoFondo.toString().toUpperCase()
   );
   const rawIngresoPreviosResults=movimientos.ingresos;
-  console.log('rawIngresoPreviosResults ingresos-gastos',movimientos.ingresos.length,movimientos.gastos.length,)
+  console.log('rawIngresoPreviosResults ingresos-gastos',movimientos.ingresos.length,movimientos.gastos.length);
   // console.log('rawIngresoPreviosResults ingresos',movimientos.ingresos)
   const rawGastoPreviosResults=movimientos.gastos;
   const saldoInicialIngreso = rawIngresoPreviosResults.reduce((acc, mov) => {

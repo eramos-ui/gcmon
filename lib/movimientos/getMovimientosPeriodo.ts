@@ -91,7 +91,8 @@ const claseMovimientoMap = {
     { $sort: { "_id.fechaDocumento": 1 } }
   ]);
   const ing= ingresos.map((r) => {
-    const fecha=r.fechaDocumento.split('T')[0];
+    // console.log('r',r,r.fechaDocumento.toISOString());
+    const fecha=r.fechaDocumento.toISOString().split('T')[0];//convierte Data a string con yyyy-mm-ddT.....
     const [year, month,day] =fecha.split("-") || [];  
     const mes=monthFullMap[Number(month)];
     const mesAñoPago=r._id.mesPago;

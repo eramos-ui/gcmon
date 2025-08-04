@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const docs = await DocGasto.aggregate([
       { $sort: { nroDocumento: -1 } },
-      { $limit: 5 },
+      { $limit: 20 },
       {
         $addFields: {//grabado como string
           fechaDate: { $toDate: "$createAt" 

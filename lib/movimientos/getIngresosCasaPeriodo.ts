@@ -19,7 +19,7 @@ const claseMovimientoMap = {
     idCasa:number  
   ) 
   {  
-    console.log('en getIngresoCasaPeriodo',email, fechaInicio, fechaFin, tipoFondo, idCasa);
+    console.log('en lib/movimientos/getIngresoCasaPeriodo',email, fechaInicio, fechaFin, tipoFondo, idCasa);
     // const claseMovimiento =  'GASTO_'+tipoFondo;
     // const clasesGastoPermitidas = claseMovimientoMap[claseMovimiento as keyof typeof claseMovimientoMap] || [];
     // Paso 1: obtener organización del usuario
@@ -27,127 +27,191 @@ const claseMovimientoMap = {
     const idOrganizacion = usuario?.idOrganizacion;
     // const clasesIngresoPermitidas= tipoFondo === 'NORMAL' ? [1000] : [1001];
     // console.log('clasesIngresoPermitidas',clasesIngresoPermitidas)
-    const fechaInicioDate = new Date(fechaInicio?.toString() || '');
-    const fechaFinDate = new Date(fechaFin?.toString() || '');
-
+    // const fechaInicioDate = new Date(fechaInicio?.toString() || '');
+    // const fechaFinDate = new Date(fechaFin?.toString() || '');
+     console.log('fechaInicio,fechaFin',fechaInicio,fechaFin)
     const matchStage: any = {
       tipoDocumento: 'INGRESO',      
       entradaSalida: 'S',
-      fechaDate: { $gte: fechaInicio, $lte: fechaFin },
+      // fechaDate: { $gte: fechaInicio, $lte: fechaFin },
+      fechaDocumento: { $gte: fechaInicio, $lte: fechaFin }
     };
-    
     if (idCasa && idCasa !== 0) {
       matchStage.idCasa = idCasa; // puede ser ObjectId o string, como lo tengas
     }
-
+    console.log('antes de la query');
+    // const query: any = {
+    //   tipoDocumento: 'INGRESO',
+    //   entradaSalida: 'S',
+    //   fechaDocumento: { $gte: fechaInicio, $lte: fechaFin }
+    // };
+    // if (idCasa !== 0) {
+    //   query.idCasa = idCasa;
+    // }
+  
+    // const ingresos= await CarteraIngreso.find(query).sort({ fechaDocumento: 1 });
     const ingresos = await CarteraIngreso.aggregate([
-    {
-      $addFields: {
-        fechaDate: {
-          $dateFromString: {
-            dateString: "$fechaDocumento",
-            timezone: "America/Santiago"  // Usa la zona horaria correcta
-          }
-        }
-      }
-    },
+    //{
+      // $addFields: {
+      //   fechaDate: {
+      //     $dateToString: {
+      //       format: "%Y-%m-%d",
+      //       date: "$fechaDocumento"
+      //     }
+      //   }
+        // fechaDate: {
+        //   $dateFromString: {
+        //     dateString: "$fechaDocumento",
+        //     timezone: "America/Santiago"  // Usa la zona horaria correcta
+        //   }
+        // }
+    //   }
+    // },
     {
       $match: matchStage
     },
     {
-      $lookup: {
+      $lookup: {//join con docIngreso
+        from: "docIngreso",
+        localField: "nroDocumento",
+        foreignField: "nroDocumento",
+        as: "docInfo"
+      }
+    },
+    { $unwind: { path: '$docInfo', preserveNullAndEmptyArrays: true } },
+    {
+     $lookup: {
         from: "familia",
         let: { idCasa: "$idCasa", mesPago: "$mesPago" },
         pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$idCasa", "$$idCasa"] },
-                  { $lte: ["$mesInicio", "$$mesPago"] },
-                  { $gte: ["$mesTermino", "$$mesPago"] }
-                ]
-              }
-            }
-          }
-        ],
-        as: "familia"
-      }
+            {
+                $match: {
+                    $expr: {
+                        $and: [
+                            { $eq: ["$idCasa", "$$idCasa"] },
+                            { $lte: ["$mesInicio", "$$mesPago"] },
+                            { $gte: ["$mesTermino", "$$mesPago"] }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  as: "familia"
+                },
+                
     },
-    { $unwind: "$familia" },
+    { $unwind: { path: '$familia', preserveNullAndEmptyArrays: true } },
     {
-      $lookup: {
+    $lookup: {
         from: "casa",
         localField: "idCasa",
         foreignField: "idCasa",
         as: "casa"
       }
     },
-    { $unwind: "$casa" },
-    {
-      $lookup: {//join con docIngreso
-        from: "docIngreso",
-        localField: "nroDocumento",
-        foreignField: "nroDocumento",
-        as: "docIngreso"
-      }
-    },
-    {
-      $unwind: {
-        path: "$docIngreso",
-        preserveNullAndEmptyArrays: true // si no siempre hay docIngreso relacionado
-      }
-    },
+    { $unwind: "$casa" }, 
     {
       $group: {
         _id: {
-          fechaDocumento: "$fechaDate",
           idCasa: "$idCasa",
-          mesPago:"$mesPago",
-          claseMovimiento:"$claseMovimiento",
-          nroDocumento:"$nroDocumento",
-
+          mesPago: "$mesPago",
+          claseMovimiento: "$claseMovimiento",
+          nroDocumento: "$nroDocumento"
         },
-        comentario: { $first: { $concat: ["Casa ", { $toString: "$casa.codigoCasa" }, ", ", "$familia.familia"] } },
+        
+        ingreso: { $sum: "$monto" },
         fechaDocumento: { $first: "$fechaDocumento" },
-        // fechaDocumento: {$first: "$fechaDate" },
-        ingreso: { $sum: "$monto" },    
-        salida: { $sum: 0 },
-        docIngreso: { $first: "$docIngreso" } 
+        //comentario: { $first: "$docInfo.comentario" },//sólo gastos tienen comentario
+        comentario: { $first: { $concat: ["Casa ", { $toString: "$casa.codigoCasa" }, ", ", "$familia.familia"] } },
+        familia: { $first: "$familia.familia" },
+        montoPagado:{  $first: "$docInfo.monto"  }
       }
-    },  
-    { $sort: { "_id.fechaDocumento": 1 } }
-  ]);
-   //console.log('ingresos en getIngresosPeriodo',ingresos)
-  // const docIngreso=await DocIngreso.find({idCasa:`${idCasa}`});  console.log('docIngresos de la casa',docIngreso.length)
-   const ing= ingresos.map((r) => {
-    const fecha=r.fechaDocumento.split('T')[0];
-    const [year, month,day] =fecha.split("-") || [];  
-    const mes=monthFullMap[Number(month)];
-    const mesAñoPago=r._id.mesPago;
-    const añoPagoX=Math.floor(mesAñoPago/100);
-    const mesPagoX=Math.floor(mesAñoPago-añoPagoX*100);
-  
-    const mesQuePaga= monthFullMap[mesPagoX]+' '+ String(añoPagoX);
-    const claseMov=(r._id.claseMovimiento === 1000)?'Ingreso normal':'Ingreso emergencia';
-    return {
-      fechaDocumento:fecha,
-      comentario: r.comentario,
-      numMesPago:r._id.mesPago,
-      mesPago:mesQuePaga,
-      montoPagado:r.docIngreso.monto,   
-      ingreso:r.ingreso,
-      salida:0,
-      tipoFondo:'Ingreso '+ tipoFondo,
-      idCasa:r._id.idCasa,
-      asignado: claseMov
-    }
+    },
+     {
+        $project: {
+          _id: 0,
+          idCasa: "$_id.idCasa",
+          mesPago: "$_id.mesPago",
+          claseMovimiento: "$_id.claseMovimiento",
+          nroDocumento: "$_id.nroDocumento",
+          fechaDocumento: 1,
+          ingreso: 1,
+          comentario: 1,
+          familia: 1,
+          montoPagado:1,
+          
+        }
+      },
+              // {
+                //   $lookup: {
+                  //     from: "casa",
+                  //     localField: "idCasa",
+                  //     foreignField: "idCasa",
+                  //     as: "casa"
+                  //   }
+                  // },
+                  // { $unwind: "$casa" },                 
+                 
+                  // {
+                    //   $group: {
+                      //     _id: {
+                        //       fechaDocumento: "$fechaDate",
+                        //       idCasa: "$idCasa",
+                        //       mesPago:"$mesPago",
+                        //       claseMovimiento:"$claseMovimiento",
+                        //       nroDocumento:"$nroDocumento",
+                        
+                        //     },
+                        //     comentario: { $first: { $concat: ["Casa ", { $toString: "$casa.codigoCasa" }, ", ", "$familia.familia"] } },
+                        //     fechaDocumento: { $first: "$fechaDocumento" },
+                        //     // fechaDocumento: {$first: "$fechaDate" },
+                        //     ingreso: { $sum: "$monto" },    
+                        //     salida: { $sum: 0 },
+                        //     docIngreso: { $first: "$docIngreso" } 
+                        //   }
+                        // },  
+                        //{ $sort: { fechaDocumento: 1 } }
+                        { $sort: { fechaDocumento: 1 } }
+                        
+                      ]);
+                          
+    // if (ingresos.length <6) console.log('ingresos',ingresos);
+    // console.log('ingresos en getIngresosPeriodo',ingresos.length)
+      
+      
+      // const docIngreso=await DocIngreso.find({idCasa:`${idCasa}`});  console.log('docIngresos de la casa',docIngreso.length)
+    const ing= ingresos.map((r) => {
+      //  console.log('r',r)
+      const fecha=r.fechaDocumento.toISOString().split('T')[0];
+      const [year, month,day] =fecha.split("-") || [];  
+      const mes=monthFullMap[Number(month)];
+      const mesAñoPago=r.mesPago;
+      const añoPagoX=Math.floor(mesAñoPago/100);
+      const mesPagoX=Math.floor(mesAñoPago-añoPagoX*100);
+      
+      const mesQuePaga= monthFullMap[mesPagoX]+' '+ String(añoPagoX);
+      const claseMov=(Number(r.claseMovimiento) === 1000)?'Ingreso normal':'Ingreso emergencia';
+      console.log('claseMov',claseMov)
+         return {
+           fechaDocumento:fecha,
+           comentario: r.comentario,
+           numMesPago:r.mesPago,
+           mesPago:mesQuePaga,
+           montoPagado:r.montoPagado,   
+           ingreso:r.ingreso,
+           salida:0,
+           tipoFondo:'Ingreso '+ tipoFondo,
+  //         idCasa:r._id.idCasa,
+           asignado: claseMov
+         }
     }
   );
+  // console.log('ing',ing)
   const ordenado = ing.sort((a, b) => 
-    new Date(a.fechaDocumento).getTime() - new Date(b.fechaDocumento).getTime() ||
+    //new Date(a.fechaDocumento).getTime() - new Date(b.fechaDocumento).getTime() ||
     a.numMesPago - b.numMesPago
   );
   //  console.log('ingreso',ordenado)
  return { ingresos: ordenado};
+// return {ingresos:ing}
 }

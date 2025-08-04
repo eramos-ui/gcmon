@@ -22,7 +22,7 @@ const normalizarFechas = (arr: any[]) =>
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
   const { email, fechaInicio, fechaFin, tipoFondo, idCasa  } = req.query;
-  // console.log('en movimientosEntreFechas',email, fechaInicio, fechaFin, tipoFondo, idCasa);
+  console.log('en movimientosEntreFechas',email, fechaInicio, fechaFin, tipoFondo, idCasa);
   const claseMovimiento =  'GASTO_'+tipoFondo;
   const clasesGastoPermitidas = claseMovimientoMap[claseMovimiento as keyof typeof claseMovimientoMap] || [];
   // Paso 1: obtener organización del usuario

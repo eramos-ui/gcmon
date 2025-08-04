@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from 'next-auth/react'; 
-import { CustomButton, CustomDate, CustomLabel, CustomSelect } from "@/components/controls";
+import { CustomButton, CustomDate, CustomSelect } from "@/components/controls";
 import { CustomGrid } from "@/components/controls/CustomGrid";
 import { ColumnConfigType, GridRowType } from "@/types/interfaces";
 import { faFileCirclePlus, faHome } from "@fortawesome/free-solid-svg-icons";
@@ -15,7 +15,7 @@ import { LoadingIndicator } from '@/components/general/LoadingIndicator';
   const columnsIngresos:ColumnConfigType<GridRowType>[] = [
     { key: "idCasa", label: "idCasa", captionPosition: "top",visible: false, editable: false, width: '50px', type: "number", options: undefined },
     { key: "fechaDocumento", label: "Fecha" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "Date", options: undefined}, 
-    { key: "comentario", label: "Comentario/Casa" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined, sortable: true  }, 
+    { key: "comentario", label: "Casa/Familia" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined, sortable: true  }, 
     { key: "montoPagado", label: "Total ingreso" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
     { key: "asignado", label: "Asignado a" , captionPosition: "top", visible: true, editable: false, width: '180px', type: "string", options: undefined, sortable: true  }, 
     { key: "ingreso", label: "Monto asignado" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
@@ -79,7 +79,7 @@ const IngresosPeriodoPage = () => {
         const idCasa=familiaFull?.idCasa || 0;
         const response = await fetch(`/api/movimientos/ingresosCasaPeriodo?fechaInicio=${fechaInicioFormatted}&fechaFin=${fechaFinFormatted}&tipoFondo=${informe}&email=${email}&idCasa=${idCasa}`);
         const data = await response.json();
-        //  console.log('familia',familiaFull,idCasa);
+        //  console.log('data',data);
         movs=data.ingresos;
         const movimientos=movs.map((mov:any) => ({
             ...mov,

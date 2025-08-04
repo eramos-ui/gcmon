@@ -13,8 +13,8 @@ const docIngresoSchema = new Schema({
     monto:{type: Number, required:true},
     comentario:{type: String, required:false},
 },
-{
-    timestamps: true 
-}
+// {
+//     timestamps: true 
+// }
 );
 export const DocIngreso = models.DocIngreso || model('DocIngreso', docIngresoSchema,'docIngreso');

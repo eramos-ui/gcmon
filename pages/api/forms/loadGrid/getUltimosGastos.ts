@@ -64,7 +64,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     ]);
-    console.log('docs',docs)
+    // console.log('docs',docs)
     const formattedDocs = docs.map(doc => {
       const dateObj = new Date(doc.fechaDate); // 👈 Conversión necesaria
       return {

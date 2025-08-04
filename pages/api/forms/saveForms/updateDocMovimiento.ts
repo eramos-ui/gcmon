@@ -14,6 +14,7 @@ import { CarteraGasto } from '@/models/CarteraGasto';
 import { ClaseMovimiento } from '@/models/ClaseMovimiento';
 import { User } from '@/models/User';
 import { Familia } from '@/models/Familia';
+import { ReturnDocument } from 'mongodb';
 // import { Casa } from '@/models/Casa';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -25,13 +26,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Método no permitido' });
   }
+  
+  const hoyStringCh=hoy.toLocaleDateString('es-CL');//truco para formatear string yyyy-mm-dd
+  const dh=Number(hoyStringCh.split('-')[0]);
+  const mh=Number(hoyStringCh.split('-')[1]);
+  const yh=Number(hoyStringCh.split('-')[2]); 
+  const fechaHoyDate=new Date(yh,mh-1,dh);
+  const hoyString=fechaHoyDate.toISOString();
+
   const { tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification, idClaseMovimiento, monto, comentario, idFamilia } = JSON.parse(req.body);
   const d=fechaDocumento.split('-')[0];
   const m=fechaDocumento.split('-')[1];
   const y=fechaDocumento.split('-')[2]; 
   const fechaDocumentoDate=new Date(y,m-1,d);
   const fechaDocumentoString=fechaDocumentoDate.toISOString();
-  console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento,fechaDocumentoDate,fechaDocumentoString)
+  console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento,fechaDocumentoDate,fechaDocumentoString,hoyString)
   // return res.status(405).json({ message: 'Probando' });
   const familias = await Familia.find({ //devuelve un array? y findOne no anda
       mesInicio: { $lte: añoMesActual },
@@ -77,13 +86,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const clases = await ClaseMovimiento.find({ idOrganizacion: 1 }); 
   // console.log('en updateDocMovimiento ultimo',ultimo,nuevoNro);
-
-
-
   let abono = Number(monto);
   // const fechaDocumento = nuevoDoc.createdAt;
-  let nuevoDoc:any;
-   
+  let nuevoDoc:any;   
   if ( tipoDocumento === "INGRESO"){//en los documentos las fechas creteAt y updatedAt son string y en las carteras fechaMovimiento y fechaDocumento son Date
       if (!idFamilia ) {
         return res.status(400).json({ error: "idFamilia debe ser obligatorio para 'INGRESO'" });
@@ -92,7 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const familia=familias.find(familia => familia.idFamilia === idFamiliaNumber);
       const idCasa=familia?familia.idCasa:0;
       
-      const hoyString=hoy.toISOString();
+      
       nuevoDoc = new Model({
         tipoDocumento,
         nroDocumento: nuevoNro,
@@ -104,7 +109,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         createAt:fechaDocumentoString,//fecha de movimiennto en Doc es string
         updatedAt:  hoyString,//fechaDocumento en Doc es string
       });
-      await nuevoDoc.save();
+        console.log('nuevoDoc ingreso', nuevoDoc)
+       await nuevoDoc.save();
+       // return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
+      
       const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})
       .sort({ nroDocumento: -1 })      
       .lean() as { nroDocumento?: number } | null;
@@ -143,8 +151,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
        }
     }
 
-    if ( tipoDocumento === "GASTO"){
-      const hoyString=hoy.toISOString();
+  if ( tipoDocumento === "GASTO"){
+      // const hoyString=hoy.toISOString();
       // // Paso 1: Insertar el documento GASTO
       nuevoDoc =new Model({
         createAt: fechaDocumentoString,// en Doc es string

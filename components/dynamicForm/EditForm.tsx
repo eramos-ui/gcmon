@@ -126,24 +126,24 @@ export const EditForm: React.FC<EditFormProps> = ({
   //grabar
   const grabar = async( values:any) =>{
 
-  // const requirePassword=fields.find(field => field.type === 'password')?.requirePassword;
-  const password = requirePassword ? await bcrypt.hash('password123', 10) : undefined;
-  //console.log('grabar',fields,requirePassword,password);    return;
-  const withRutFields=fields.filter(field => field.type === 'RUT');//field que tienen field type='RUT' para formatearlo estándar
-    let updateValues:any=values;
-    if (withRutFields && withRutFields.length > 0) {
-        //actualizar rut de los values[field.name] cuando es un rut para que se graben ###.###.###-# , se hace 2 veces porque formatRut lo repite
-      withRutFields.forEach((field:any) => {
-        const valueRut=values[field.name];
-        updateValues[field.name]=valueRut;
-      });
-    }   
-    const changedItem=_.isEqual(updateValues,row); //compara si los valores de updateValues son iguales a los de row
-    if (changedItem) {
-      console.log('en FormPage grabar no hay cambios');
-      return;
-    } 
-    // console.log('en EditForm grabar updateValues',values, values.descripcion);return;   
+    // const requirePassword=fields.find(field => field.type === 'password')?.requirePassword;
+    const password = requirePassword ? await bcrypt.hash('password123', 10) : undefined;
+    //console.log('grabar',fields,requirePassword,password);    return;
+    const withRutFields=fields.filter(field => field.type === 'RUT');//field que tienen field type='RUT' para formatearlo estándar
+      let updateValues:any=values;
+      if (withRutFields && withRutFields.length > 0) {
+          //actualizar rut de los values[field.name] cuando es un rut para que se graben ###.###.###-# , se hace 2 veces porque formatRut lo repite
+        withRutFields.forEach((field:any) => {
+          const valueRut=values[field.name];
+          updateValues[field.name]=valueRut;
+        });
+      }   
+      const changedItem=_.isEqual(updateValues,row); //compara si los valores de updateValues son iguales a los de row
+      if (changedItem) {
+        console.log('en FormPage grabar no hay cambios');
+        return;
+      } 
+      // console.log('en EditForm grabar updateValues',values, values.descripcion);return;   
     const apiSaveForms=`/api/${apiSaveForm}`;
     const comentario=(values.descripcion)?values.descripcion:'';
     const body={...updateValues,comentario, formId:formId,  idUserModification:session?.user.id};//siempre agrega el idUserModification

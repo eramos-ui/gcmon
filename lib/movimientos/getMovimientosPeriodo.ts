@@ -164,7 +164,7 @@ const claseMovimientoMap = {
       $addFields: {
         descripcion: {
           $cond: [
-            { $in: ["$claseMovimiento", [99]] },
+            { $in: ["$claseMovimiento", [99,98]] },
             "$doc.comentario",
             "$clase.descripcion"
           ]

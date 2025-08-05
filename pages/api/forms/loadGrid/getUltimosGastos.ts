@@ -24,14 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             
           }
         }
-        // $addFields: {//si ed Date
-        //   fechaDate: {
-        //     $dateFromString: {
-        //       dateString: "$createdAt",
-        //       timezone: "America/Santiago"  // Usa la zona horaria correcta
-        //     }
-        //   }
-        // }
       },
       {
         $addFields: {

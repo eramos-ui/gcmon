@@ -40,6 +40,12 @@ const claseMovimientoMap = {
       matchStage.idCasa = idCasa; // puede ser ObjectId o string, como lo tengas
     }
     console.log('antes de la query');
+    
+    // const familias = await Familia.find({
+    //   idFamilia: { $gt: 0 },
+    //   mesInicio: { $lte: añoMesActual },
+    //   mesTermino: { $gte: añoMesActual }
+    //   }).lean();
     // const query: any = {
     //   tipoDocumento: 'INGRESO',
     //   entradaSalida: 'S',
@@ -123,8 +129,9 @@ const claseMovimientoMap = {
         fechaDocumento: { $first: "$fechaDocumento" },
         //comentario: { $first: "$docInfo.comentario" },//sólo gastos tienen comentario
         comentario: { $first: { $concat: ["Casa ", { $toString: "$casa.codigoCasa" }, ", ", "$familia.familia"] } },
-        familia: { $first: "$familia.familia" },
-        montoPagado:{  $first: "$docInfo.monto"  }
+        // familia: { $first: "$familia.familia" },
+        montoPagado:{  $first: "$docInfo.monto"  },
+        fechaMovimiento: { $first: "$fechaMovimiento" },
       }
     },
      {
@@ -139,7 +146,7 @@ const claseMovimientoMap = {
           comentario: 1,
           familia: 1,
           montoPagado:1,
-          
+          fechaMovimiento:1,          
         }
       },
               // {
@@ -171,17 +178,19 @@ const claseMovimientoMap = {
                         //   }
                         // },  
                         //{ $sort: { fechaDocumento: 1 } }
-                        { $sort: { fechaDocumento: 1 } }
-                        
-                      ]);
-                          
+            { $sort: { nroDocumento: 1 } }
+            
+          ]);
+              
     // if (ingresos.length <6) console.log('ingresos',ingresos);
-    // console.log('ingresos en getIngresosPeriodo',ingresos.length)
+    console.log('ingresos en getIngresosPeriodo',ingresos.length)
+
+  
       
       
       // const docIngreso=await DocIngreso.find({idCasa:`${idCasa}`});  console.log('docIngresos de la casa',docIngreso.length)
     const ing= ingresos.map((r) => {
-      //  console.log('r',r)
+        console.log('r',r)
       const fecha=r.fechaDocumento.toISOString().split('T')[0];
       const [year, month,day] =fecha.split("-") || [];  
       const mes=monthFullMap[Number(month)];
@@ -191,7 +200,7 @@ const claseMovimientoMap = {
       
       const mesQuePaga= monthFullMap[mesPagoX]+' '+ String(añoPagoX);
       const claseMov=(Number(r.claseMovimiento) === 1000)?'Ingreso normal':'Ingreso emergencia';
-      console.log('claseMov',claseMov)
+
          return {
            fechaDocumento:fecha,
            comentario: r.comentario,
@@ -201,6 +210,7 @@ const claseMovimientoMap = {
            ingreso:r.ingreso,
            salida:0,
            tipoFondo:'Ingreso '+ tipoFondo,
+           nroDocumento:r.nroDocumento,
   //         idCasa:r._id.idCasa,
            asignado: claseMov
          }

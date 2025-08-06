@@ -15,12 +15,13 @@ import { LoadingIndicator } from '@/components/general/LoadingIndicator';
   const columnsIngresos:ColumnConfigType<GridRowType>[] = [
     { key: "idCasa", label: "idCasa", captionPosition: "top",visible: false, editable: false, width: '50px', type: "number", options: undefined },
     { key: "fechaDocumento", label: "Fecha" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "Date", options: undefined}, 
-    { key: "comentario", label: "Casa/Familia" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined, sortable: true  }, 
+    { key: "nroDocumento", label: "N° ingreso" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "Date", options: undefined}, 
+    { key: "comentario", label: "Casa/Familia" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined, sortable: false  }, 
     { key: "montoPagado", label: "Total ingreso" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
-    { key: "asignado", label: "Asignado a" , captionPosition: "top", visible: true, editable: false, width: '180px', type: "string", options: undefined, sortable: true  }, 
+    { key: "asignado", label: "Asignado a" , captionPosition: "top", visible: true, editable: false, width: '180px', type: "string", options: undefined, sortable: false  }, 
     { key: "ingreso", label: "Monto asignado" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined }, 
     { key: "mesPago", label: "Mes paga" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "string", options: undefined, sortable: true}, 
-    { key: "saldo", label: "Saldo" , captionPosition: "top", visible: true, editable: false, width: '100px', type: "number", options: undefined, hideOnSort: true, }, 
+    { key: "saldo", label: "Saldo asignado" , captionPosition: "top", visible: true, editable: false, width: '120px', type: "number", options: undefined, hideOnSort: true, }, 
 
   ]
   const hoy = new Date();
@@ -43,6 +44,7 @@ const IngresosPeriodoPage = () => {
     const { data: session, status }                                 = useSession();
     const [ familias, setFamilias ]                                 = useState<{value:number;label:string}[]>();
     const [ familiasFull, setFamiliasFull ]                         = useState<{value:number;label:string;idCasa:number}[]>([]);
+    const [ rowsOriginal, setRowsOriginal ]                         = useState<GridRowType[]>([]);
 
     const email=session?.user.email;
     const userName=session?.user.name;
@@ -62,7 +64,70 @@ const IngresosPeriodoPage = () => {
     },[])
     const handleChangeFamilia= (value: string) => {
         setFamilia(value);
-      }
+    }
+    const  calcularSaldoPorDocumento=(data: any[]): (any & { saldo: number })[] => {
+       
+        let saldoAcumulado = 0;
+        let idCasaActual: number | null = null;
+        let nroDocumentoActual: number | null = null;
+        const valoresConSaldo=data.map((item) => {
+          // Si cambiamos de idCasa o nroDocumento, reiniciamos el saldo
+          if (item.idCasa !== idCasaActual || item.nroDocumento !== nroDocumentoActual) {
+            saldoAcumulado = 0;
+            idCasaActual = item.idCasa;
+            nroDocumentoActual = item.nroDocumento;
+          }
+      
+          saldoAcumulado += item.ingreso;
+      
+          return {
+            ...item,
+            saldo: saldoAcumulado
+          };
+        });
+     
+        return valoresConSaldo;
+    }
+    const ocultarValoresRepetidos = (data: GridRowType[]): GridRowType[] => {
+      // console.log('data recibida en ocultarValoresRepetidos',data) 
+      let comentarioAnterior:string | null;
+      let nroDocumentoAnterior: number | null = null;
+      const cleanValues= data.map((item:any) => {
+        const mostrar = item.comentario !== comentarioAnterior || item.nroDocumento !== nroDocumentoAnterior;
+    
+        const nuevoItem = {
+          ...item,
+          comentario: mostrar ? item.comentario : "",      // Casa/Familia
+          montoPagado: mostrar ? item.montoPagado : ""     // Total ingreso
+        };   
+        comentarioAnterior = item.comentario;
+        nroDocumentoAnterior = item.nroDocumento;
+        return nuevoItem;
+      });
+      // console.log('cleanValues en ocultarValoresRepetidos',cleanValues)
+      return cleanValues;
+    };
+      // return data.map((item:any) => {
+      //   const mostrar = item.comentario !== comentarioAnterior || item.nroDocumento !== nroDocumentoAnterior;
+    
+      //   const nuevoItem = {
+      //     ...item,
+      //     comentario: mostrar ? item.comentario : "",      // Casa/Familia
+      //     montoPagado: mostrar ? item.montoPagado : ""     // Total ingreso
+      //   };
+   
+      //   comentarioAnterior = item.comentario;
+      //   nroDocumentoAnterior = item.nroDocumento;
+      //   return nuevoItem;
+      // });
+    //};
+    // const sortFunction=(key: keyof T) => {
+    //   setSortConfig((prev) => {
+    //   if (prev?.key === key) {
+    //     return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+    //   }
+    //   return { key, direction: "asc" };
+    // });
     const fetchRows = async () => {
 
         if (!fechaInicio || !fechaFin || !familia) return
@@ -82,22 +147,13 @@ const IngresosPeriodoPage = () => {
         //  console.log('data',data);
         movs=data.ingresos;
         const movimientos=movs.map((mov:any) => ({
-            ...mov,
-            fechaDocumento: new Date(mov.fechaDocumento).toLocaleDateString('es-ES')
+          ...mov,
+          fechaDocumento: new Date(mov.fechaDocumento).toLocaleDateString('es-ES')
         }));
-        let saldo = 0;
-        const movimientosConSaldo = movimientos.map((mov:any) => {
-            let idCasa = 0;
-            if (mov.ingreso > 0 && mov.salida === 0) idCasa =mov.idCasa; //para hacer un zoom en la grilla si idCasa>0  y es ingreso
-            saldo += (mov.ingreso || 0) - (mov.salida || 0);
-            return {
-                idCasa,
-                ...mov,
-                saldo
-            };
-        });
-        // console.log('en Movimiento por casa perido',movimientosConSaldo)
-        setRows(movimientosConSaldo);
+        const movimientosConSaldo=calcularSaldoPorDocumento(movimientos);
+        setRowsOriginal(movimientosConSaldo)
+        const movimientosAgrupados = ocultarValoresRepetidos(movimientosConSaldo);
+        setRows(movimientosAgrupados);
         setLoading(false);
         setIsModalOpen(true);
     }
@@ -108,7 +164,6 @@ const IngresosPeriodoPage = () => {
     < LoadingIndicator/>
     return;
     }
-    // console.log('columnsIngresos',columnsIngresos)
     return (
       <div className="p-4">
         <h1 className="text-3xl font-bold">Ingresos entre fechas por Casa</h1>
@@ -143,7 +198,7 @@ const IngresosPeriodoPage = () => {
         {rows.length>0 && (
            <div className="flex justify-center items-center w-full">
               <CustomGrid rowsToShow={100} rowHeight='25px' fontSize='14px' exportable={true} labelButtomActions={['','','','']} // actions={['zoom']} 
-                borderVertical={true}  columns={gridColumns} data={rows} currentPage={currentPage} key={gridKey}
+                borderVertical={true}  columns={gridColumns} data={rowsOriginal} currentPage={currentPage} key={gridKey} ocultarValoresRepetidos={ocultarValoresRepetidos}
               />
            </div>
         )}

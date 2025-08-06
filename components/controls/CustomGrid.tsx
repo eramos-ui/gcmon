@@ -23,7 +23,7 @@ export type CustomGridProps<T> = {
   marginLeft?: string; // Espaciado izquierdo de la grilla
   gridWidth?: string; // Ancho total de la grilla
   columns: ColumnConfigType<T>[]; // Configuración de las columnas
-  data: T[]; // Datos a mostrar en la grilla
+  data: T[]; // Datos a mostrar en la grilla originales sim ocultarValoresRepetidos
   name?: string; // Campo del formulario donde se almacenará la data
   actions?: ("add" | "edit" | "delete" | "zoom")[]; // Acciones disponibles
   actionsTooltips?: string[]; // tooltips de las Acciones 
@@ -41,6 +41,7 @@ export type CustomGridProps<T> = {
   onRowSelect?: (row: T | null) => void; // 📌 Callback para manejar las filas seleccionadas
   isEditable?: (column: ColumnConfigType<T>, row: T) => boolean;
   currentPage?: number; // permitir seteo externo de página
+  ocultarValoresRepetidos?: (data: T[]) => T[];
 };
 
 export const CustomGrid = <T,>({
@@ -69,29 +70,53 @@ export const CustomGrid = <T,>({
   onRowSelect,
   isEditable,
   currentPage ,
+  ocultarValoresRepetidos,
+
 }: CustomGridProps<T>) => {
-  //  console.log('en CustomGrid actions',data);
+    // console.log('en CustomGrid actions',data);
   const [columnWidths, setColumnWidths]                 = useState<Record<string, string>>(
     Object.fromEntries(columns.map(col => [String(col.key), col.width || "150px"]))
   );
   const [ currentInternalPage, setCurrentInternalPage ] = useState(currentPage ?? 0);
   const [ selectedGridRow, setSelectedGridRow ]         = useState<T | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: keyof T; direction: 'asc' | 'desc' } | null>(null);
+  const [ sortConfig, setSortConfig ]                   = useState<{ key: keyof T; direction: 'asc' | 'desc' } | null>(null);
+  const [ rows, setRows ]                               = useState<T[]>(data);//para manejar datos con la función ocultarValoresRepetidos       
   const sortedData = useMemo(() => {
-    if (!sortConfig) return data;
-  
-    return [...data].sort((a, b) => {
+    // console.log('sortedData original', rows)
+    if (!sortConfig) return rows;
+    const sortData=[...rows].sort((a, b) => {
       const valA = a[sortConfig.key];
       const valB = b[sortConfig.key];
-  
+
       if (valA == null) return 1;
       if (valB == null) return -1;
-  
+
       if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
       if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
       return 0;
     });
-  }, [data, sortConfig]);
+    let newData=sortData;
+    // console.log('sortData',sortData);
+    if (ocultarValoresRepetidos){
+      const newData=ocultarValoresRepetidos(sortData);
+    }
+    return newData
+
+  }, [rows, sortConfig]);
+  useEffect(()=>{
+    // console.log('en useEffect de CustomGrid',rows)
+    if (rows && rows.length>0 && ocultarValoresRepetidos ){
+      const rowSorted=sortedData.slice(startIndex, endIndex);
+      //console.log('en useEffect de CustomGrid inside rowSorted',rowSorted)
+      // const newData=ocultarValoresRepetidos(rowSorted);
+      const processedData = ocultarValoresRepetidos
+      ? ocultarValoresRepetidos(data)
+      : data;
+      //console.log('en useEffect de CustomGrid inside newData',newData)
+      // setRows(rowSorted);
+      setRows(processedData);
+      }
+  },[data])
   const columnsToRender = useMemo(
     () =>
       columns.filter(c => {
@@ -103,7 +128,10 @@ export const CustomGrid = <T,>({
     [columns, sortConfig]
   );
 
-  const handleSort = (key: keyof T) => { 
+  const handleSort = (key: keyof T) => {
+    const col=columns.find(col =>col.key === key);
+    if (!col || !col.sortable) return;
+    // console.log('key en handleSort',key, columns) 
     setSortConfig((prev) => {
       if (prev?.key === key) {
         return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
@@ -118,7 +146,7 @@ export const CustomGrid = <T,>({
   }, [currentPage]);
   const startIndex = currentInternalPage * rowsToShow;    // Calcular índices de paginación
   const endIndex = startIndex + rowsToShow;
-  const totalPages = (data) ? Math.ceil(data.length / rowsToShow):0;
+  const totalPages = (rows) ? Math.ceil(rows.length / rowsToShow):0;
   // const paginatedData =(data) ? data.slice(startIndex, endIndex):0;
   const paginatedData = sortedData.slice(startIndex, endIndex);
   const handlePageChange = (newPage: number) => {
@@ -154,7 +182,7 @@ export const CustomGrid = <T,>({
       key: col.key === "NumActividad" ? "Nro Actividad" : col.key, 
       label: col.key === "NumActividad" ? "Nro Actividad" : col.label // Cambiar valores específicos
     }));
-  const updatedData = renameKey(data, "NumActividad", "Nro Actividad");
+  const updatedData = renameKey(rows, "NumActividad", "Nro Actividad");
   exportToExcel(fileName, updatedData, updatedColumns);
   };
   const filteredActions: ("edit" | "delete" | "zoom")[] = actions.filter((action): action is "edit" | "delete" | "zoom" => action !== "add");
@@ -214,7 +242,7 @@ export const CustomGrid = <T,>({
           </div>
         </div>
       </div>
-      { data && (
+      { rows && (
         <div style={{ display: "flex", justifyContent: "center", marginTop: "10px", gap: "10px" }}>  {/* Controles de paginación */}
           <span> Página {currentInternalPage+1 } de {totalPages}, son {data.length} filas   </span>
             {currentInternalPage > 0 && (

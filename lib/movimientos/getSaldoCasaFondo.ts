@@ -1,5 +1,5 @@
-import { CarteraIngreso } from "@/models/CarteraIngreso"; // Asegúrate de tener el modelo definido
-import { Types } from "mongoose";
+import { CarteraIngreso } from "@/models/CarteraIngreso"; 
+// import { Types } from "mongoose";
 
 interface SaldoDeuda {
   tipoDocumentoRef: string;
@@ -55,7 +55,7 @@ export async function getSaldoCasaFondo(
     },
   ];
   const resultados = await CarteraIngreso.aggregate(pipeline);
-  // console.log('resultados',resultados)
+  console.log('resultados en getSalodCasaFondo',resultados)
 
   // Reformatear salida
   return resultados.map((r) => ({

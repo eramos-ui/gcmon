@@ -21,10 +21,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       new Date(fechaInicio.toString()),
       new Date(fechaFin.toString()),
       tipoFondo.toString().toUpperCase(),
-      idCasaNumber
+      idCasaNumber,
     );
   
-    console.log('movimientos en ingresosPeriodo',movimientos)
+    // console.log('movimientos en ingresosPeriodo',movimientos)
     res.status(200).json(movimientos);
   } catch (error) {
     //console.error('Error al obtener movimientos periodo:', error);

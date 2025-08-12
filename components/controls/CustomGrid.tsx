@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CustomButton, CustomButtonProps } from "./CustomButton";
 import { faPlus, faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
 import { GridRow } from "@/components/controls/grid/GridRow";
@@ -22,7 +22,7 @@ export type CustomGridProps<T> = {
   marginLeft?: string; // Espaciado izquierdo de la grilla
   gridWidth?: string; // Ancho total de la grilla
   columns: ColumnConfigType<T>[]; // Configuración de las columnas
-  data: T[]; // Datos a mostrar en la grilla
+  data: T[]; // Datos a mostrar en la grilla originales sim ocultarValoresRepetidos
   name?: string; // Campo del formulario donde se almacenará la data
   actions?: ("add" | "edit" | "delete" | "zoom" |"zoom-file")[]; // Acciones disponibles
   actionsTooltips?: string[]; // tooltips de las Acciones 
@@ -40,6 +40,7 @@ export type CustomGridProps<T> = {
   onRowSelect?: (row: T | null) => void; // 📌 Callback para manejar las filas seleccionadas
   isEditable?: (column: ColumnConfigType<T>, row: T) => boolean;
   currentPage?: number; // permitir seteo externo de página
+  ocultarValoresRepetidos?: (data: T[]) => T[];
 };
 
 export const CustomGrid = <T,>({
@@ -68,150 +69,202 @@ export const CustomGrid = <T,>({
   onRowSelect,
   isEditable,
   currentPage ,
+  ocultarValoresRepetidos,
 }: CustomGridProps<T>) => {
   //  console.log('en CustomGrid actions',data);
-  const [columnWidths, setColumnWidths]                 = useState<Record<string, string>>(
-    Object.fromEntries(columns.map(col => [String(col.key), col.width || "150px"]))
-  );
-  const [ currentInternalPage, setCurrentInternalPage ] = useState(currentPage ?? 0);
-  const [ selectedGridRow, setSelectedGridRow ]         = useState<T | null>(null);
 
+    const [columnWidths, setColumnWidths]                 = useState<Record<string, string>>(
+      Object.fromEntries(columns.map(col => [String(col.key), col.width || "150px"]))
+    );
+    const [ currentInternalPage, setCurrentInternalPage ] = useState(currentPage ?? 0);
+    const [ selectedGridRow, setSelectedGridRow ]         = useState<T | null>(null);
+    const [ sortConfig, setSortConfig ]                   = useState<{ key: keyof T; direction: 'asc' | 'desc' } | null>(null);
+    const [ rows, setRows ]                               = useState<T[]>(data);//para manejar datos con la función ocultarValoresRepetidos       
+    const sortedData = useMemo(() => {
+      // console.log('sortedData original', rows)
+      if (!sortConfig) return rows;
+      const sortData=[...rows].sort((a, b) => {
+        const valA = a[sortConfig.key];
+        const valB = b[sortConfig.key];
   
-  useEffect(() => { // Si `currentPage` viene desde props, sincronizar estado interno:
-    if (currentPage !== undefined) {
-      // console.log('en CustomGrid useEffect currentPage,currentInternalPage',currentPage,currentInternalPage);
-      setCurrentInternalPage(currentPage);
-    }
-  }, [currentPage]);
-
- 
-    // Calcular índices de paginación
-  const startIndex = currentInternalPage * rowsToShow;
-  const endIndex = startIndex + rowsToShow;
-  //console.log('en CustomGrid data',data);
-  const totalPages = (data) ? Math.ceil(data.length / rowsToShow):0;
-  //console.log('totalPages',totalPages,startIndex,endIndex);
-  const paginatedData =(data) ? data.slice(startIndex, endIndex):0;
-  // const goToPreviousPage = () => setCurrentPage((prev) => Math.max(prev - 1, 0));
-  // const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1));
-  const handlePageChange = (newPage: number) => {
-    //console.log('en handlePageChange newPage,totalPages',newPage,totalPages, currentPage);
-    if (newPage >= 0 && newPage <= totalPages) {
-      setCurrentInternalPage(newPage);
-    }
-  };
-  const handleRowSelection = (row: T) => {
-    // console.log('en CustomGrid handleRowSelection',title,row,selectable);
-    setSelectedGridRow(row);
-    if (onRowSelect) {
-      onRowSelect(row); // 📌 Notificar al componente padre
-    }
-  };
-  // Función para actualizar el ancho de una columna globalmente
-  const updateColumnWidth = (colKey: string, newWidth: string) => {
-    setColumnWidths(prevWidths => {
-      if (parseInt(prevWidths[colKey] || "150", 10) < parseInt(newWidth, 10)) {
-        return { ...prevWidths, [colKey]: newWidth };
+        if (valA == null) return 1;
+        if (valB == null) return -1;
+  
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+      let newData=sortData;
+      // console.log('sortData',sortData);
+      if (ocultarValoresRepetidos){
+        const newData=ocultarValoresRepetidos(sortData);
       }
-      return prevWidths;
-    });
-  };
-  const handleExport  = (fileName: string) => {
-    const renameKey = (array: any[], oldKey: string, newKey: string) => { //para renombrar NumActividad por N° Actividad
-      return array.map(obj => {
-        if (!(oldKey in obj)) return obj; // Si la clave no existe, no modifica el objeto
-        const { [oldKey]: value, ...rest } = obj;
-        return { [newKey]: value, ...rest };
+      return newData
+  
+    }, [rows, sortConfig]);
+    useEffect(()=>{
+      // console.log('en useEffect de CustomGrid',rows)
+      if (rows && rows.length>0 && ocultarValoresRepetidos ){
+        const rowSorted=sortedData.slice(startIndex, endIndex);
+        //console.log('en useEffect de CustomGrid inside rowSorted',rowSorted)
+        // const newData=ocultarValoresRepetidos(rowSorted);
+        const processedData = ocultarValoresRepetidos
+        ? ocultarValoresRepetidos(data)
+        : data;
+        //console.log('en useEffect de CustomGrid inside newData',newData)
+        // setRows(rowSorted);
+        setRows(processedData);
+        }
+    },[data])
+    const columnsToRender = useMemo(
+      () =>
+        columns.filter(c => {
+          if (c.visible === false) return false;
+          // Oculta si la columna pide ocultarse y hay orden activo
+          if (c.hideOnSort && sortConfig?.key) return false;
+          return true;
+        }),
+      [columns, sortConfig]
+    );
+  
+    const handleSort = (key: keyof T) => {
+      const col=columns.find(col =>col.key === key);
+      if (!col || !col.sortable) return;
+      // console.log('key en handleSort',key, columns) 
+      setSortConfig((prev) => {
+        if (prev?.key === key) {
+          return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+        }
+        return { key, direction: "asc" };
       });
     };
-    const updatedColumns = columns.map(col => ({
-      ...col, // Mantener los demás atributos sin cambios
-      key: col.key === "NumActividad" ? "Nro Actividad" : col.key, 
-      label: col.key === "NumActividad" ? "Nro Actividad" : col.label // Cambiar valores específicos
-    }));
-  const updatedData = renameKey(data, "NumActividad", "Nro Actividad");
-  exportToExcel(fileName, updatedData, updatedColumns);
-  };
-  const filteredActions: ("edit" | "delete" | "zoom")[] = actions.filter((action): action is "edit" | "delete" | "zoom" => action !== "add");
-  const minWidth = columns
-  .filter((col) => col.visible !== false)
-  .reduce((total, col) => total + parseInt(col.width || "100"), 0) + (actions.includes("edit") || actions.includes("delete") ? 100 : 0);
-
-  const getEditableState = (column: ColumnConfigType<T>, row: T) => {
-    if (isEditable) {
-      return isEditable(column, row); // Usa la función si está definida
-    }
-    return column.editable; // Usa la configuración predeterminada si no hay función
-  };
+    useEffect(() => { // Si `currentPage` viene desde props, sincronizar estado interno:
+      if (currentPage !== undefined) {
+        setCurrentInternalPage(currentPage);
+      }
+    }, [currentPage]);
+    const startIndex = currentInternalPage * rowsToShow;    // Calcular índices de paginación
+    const endIndex = startIndex + rowsToShow;
+    const totalPages = (rows) ? Math.ceil(rows.length / rowsToShow):0;
+    // const paginatedData =(data) ? data.slice(startIndex, endIndex):0;
+    const paginatedData = sortedData.slice(startIndex, endIndex);
+    const handlePageChange = (newPage: number) => {
+      //console.log('en handlePageChange newPage,totalPages',newPage,totalPages, currentPage);
+      if (newPage >= 0 && newPage <= totalPages) {
+        setCurrentInternalPage(newPage);
+      }
+    };
+    const handleRowSelection = (row: T) => {
+      setSelectedGridRow(row);
+      if (onRowSelect) {
+        onRowSelect(row); // 📌 Notificar al componente padre
+      }
+    };  
+    const updateColumnWidth = (colKey: string, newWidth: string) => {// Función para actualizar el ancho de una columna globalmente
+      setColumnWidths(prevWidths => {
+        if (parseInt(prevWidths[colKey] || "150", 10) < parseInt(newWidth, 10)) {
+          return { ...prevWidths, [colKey]: newWidth };
+        }
+        return prevWidths;
+      });
+    };
+    const handleExport  = (fileName: string) => {
+      const renameKey = (array: any[], oldKey: string, newKey: string) => { //para renombrar NumActividad por N° Actividad
+        return array.map(obj => {
+          if (!(oldKey in obj)) return obj; // Si la clave no existe, no modifica el objeto
+          const { [oldKey]: value, ...rest } = obj;
+          return { [newKey]: value, ...rest };
+        });
+      };
+      const updatedColumns = columns.map(col => ({
+        ...col, // Mantener los demás atributos sin cambios
+        key: col.key === "NumActividad" ? "Nro Actividad" : col.key, 
+        label: col.key === "NumActividad" ? "Nro Actividad" : col.label // Cambiar valores específicos
+      }));
+    const updatedData = renameKey(rows, "NumActividad", "Nro Actividad");
+    exportToExcel(fileName, updatedData, updatedColumns);
+    };
+    const filteredActions: ("edit" | "delete" | "zoom")[] = actions.filter((action): action is "edit" | "delete" | "zoom" => action !== "add");
+    // const minWidth = columns
+    // .filter((col) => col.visible !== false)
+    // .reduce((total, col) => total + parseInt(col.width || "100"), 0) + (actions.includes("edit") || actions.includes("delete") ? 100 : 0);
+    const minWidth = columnsToRender
+    .reduce((total, col) => total + parseInt(col.width || "100", 10), 0)
+    + (actions.includes("edit") || actions.includes("delete") ? 100 : 0);
+  
+    const getEditableState = (column: ColumnConfigType<T>, row: T) => {
+      if (isEditable) {
+        return isEditable(column, row); // Usa la función si está definida
+      }
+      return column.editable; // Usa la configuración predeterminada si no hay función
+    };
   return (
-  <>
-   {/* { console.log('JSX selectedRow',selectedRow)} */}
-    <div
-      style={{ marginBottom, width: gridWidth,  overflowX: "auto", fontSize,  }}
-    >
-      <div   /* Encabezado con título y botón Add */
-        style={{  display: "flex",  gap: "10px", // Espaciado entre el título y el botón
-          alignItems: "center", // Alineación vertical centrada
-          marginBottom: "0rem",
-          marginLeft:"2rem",
-        }}
+    <>
+     {/* { console.log('JSX selectedRow',columnWidths)} */}
+      <div
+        style={{ marginBottom, width: gridWidth,  overflowX: "auto", fontSize,  }}
       >
-        {title && <h2 style={{ fontWeight: "bold", marginTop: '0', fontSize,}}>{title}</h2>}
-        {actions.includes("add") && (
-          <CustomButton label={labelButtomActions[0]} onClick={ onAdd } buttonStyle="primary" size="small" theme="light"
-            style={{ height: '2.00rem', marginTop:'0.3rem' }} icon={<FontAwesomeIcon icon={faPlus} />} tooltipContent={actionsTooltips[0] || 'Agregar'}
-            tooltipPosition={actionsPositionTooltips[0] || 'bottom'}
+        <div   /* Encabezado con título y botón Add */
+          style={{  display: "flex",  gap: "10px", // Espaciado entre el título y el botón
+            alignItems: "center", // Alineación vertical centrada
+            marginBottom: "0rem",
+            marginLeft:"2rem",
+          }}
+        >
+          {title && <h2 style={{ fontWeight: "bold", marginTop: '0', fontSize,}}>{title}</h2>}
+          {actions.includes("add") && (
+            <CustomButton label={labelButtomActions[0]} onClick={ onAdd } buttonStyle="primary" size="small" theme="light"
+              style={{ height: '2.00rem', marginTop:'0.3rem' }} icon={<FontAwesomeIcon icon={faPlus} />} tooltipContent={actionsTooltips[0] || 'Agregar'}
+              tooltipPosition={actionsPositionTooltips[0] || 'bottom'}
+            />
+          )}        
+          {exportable && <ExportConfig onExport={handleExport } />}
+        </div>    
+        <div style={{ border: `${borderWidth} solid ${borderColor}`, display: "inline-block", }}> 
+          <GridHeader  actions={filteredActions} borderColor={borderColor} borderWidth={borderWidth} padding={padding} columns={columnsToRender} 
+            borderVertical={borderVertical} columnWidths={columnWidths} fontSize={ fontSize} onSort={handleSort} sortConfig={sortConfig} //columns={columns} 
           />
-        )}        
-        {exportable && <ExportConfig onExport={handleExport } />}
-      </div>    
-      <div style={{ border: `${borderWidth} solid ${borderColor}`, display: "inline-block", }}> 
-        <GridHeader columns={columns} actions={filteredActions} borderColor={borderColor} borderWidth={borderWidth} padding={padding}
-          borderVertical={borderVertical} columnWidths={columnWidths} fontSize={ fontSize}
-        />
-        <div>
           <div>
-            { (paginatedData) ? paginatedData.map((row, rowIndex) => {/* Filas */
-            // if (rowIndex < 3) console.log('row',row,rowIndex)
-            return(
-              <GridRow key={rowIndex} row={row} actions={filteredActions} onEdit={onEdit} onDelete={onDelete} onZoom={onZoom} 
-                rowHeight={rowHeight} fontSize={ fontSize}
-                padding={padding} borderColor={borderColor} borderWidth={borderWidth} borderVertical={borderVertical}  actionsTooltips={actionsTooltips}
-                actionsPositionTooltips={actionsPositionTooltips} columnWidths={columnWidths} // 📌 Pasamos el estado global de anchos
-                updateColumnWidth={updateColumnWidth} selectable={selectable} onSelect={() => handleRowSelection(row)} isSelected={selectedGridRow === row}
-                columns={columns.map((col) => ({...col, editable: getEditableState(col, row),}))} // 📌 Determina la edición dinámicamente       
-                />
-            )
-            }): <></>}
+            <div>
+              { (paginatedData) ? paginatedData.map((row, rowIndex) => {/* Filas */
+              return(
+                <GridRow key={rowIndex} row={row} actions={filteredActions} onEdit={onEdit} onDelete={onDelete} onZoom={onZoom} 
+                  rowHeight={rowHeight} fontSize={ fontSize}
+                  padding={padding} borderColor={borderColor} borderWidth={borderWidth} borderVertical={borderVertical}  actionsTooltips={actionsTooltips}
+                  actionsPositionTooltips={actionsPositionTooltips} columnWidths={columnWidths} // 📌 Pasamos el estado global de anchos
+                  updateColumnWidth={updateColumnWidth} selectable={selectable} onSelect={() => handleRowSelection(row)} isSelected={selectedGridRow === row}
+                 // columns={columns.map((col) => ({...col, editable: getEditableState(col, row),}))} // 📌 Determina la edición dinámicamente       
+                 columns={columnsToRender.map((col) => ({...col, editable: getEditableState(col, row),}))} // 📌 Determina la edición dinámicamente       
+                  />
+              )
+              }): <></>}
+            </div>
           </div>
         </div>
+        { rows && (
+          <div style={{ display: "flex", justifyContent: "center", marginTop: "10px", gap: "10px" }}>  {/* Controles de paginación */}
+            <span> Página {currentInternalPage+1 } de {totalPages}, son {data.length} filas   </span>
+              {currentInternalPage > 0 && (
+                  <CustomButton size='small'  buttonStyle="primary" theme="light" label="Pág. Anterior"
+                    onClick={() => handlePageChange(currentInternalPage - 1)}
+                    disabled={currentInternalPage >  totalPages - 1} 
+                    icon={<FontAwesomeIcon icon={faArrowLeft} size="lg" color="white" />} iconPosition='left'
+                />
+              )}
+                {currentInternalPage < totalPages && (
+                <CustomButton size='small'  buttonStyle="primary" theme="light" label="Pág. Siguiente"
+                  onClick={() => handlePageChange(currentInternalPage + 1)}
+                  disabled={currentInternalPage >= totalPages - 1} 
+                  icon={<FontAwesomeIcon icon={faArrowRight} size="lg" color="white" />} iconPosition='right'
+                />
+              )}
+          </div>
+        )
+        }
       </div>
-      { data && (
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "10px", gap: "10px" }}>  {/* Controles de paginación */}
-          <span> Página {currentInternalPage+1 } de {totalPages}, son {data.length} filas   </span>
-            {currentInternalPage > 0 && (
-                <CustomButton size='small'  buttonStyle="primary" theme="light" label="Pág. Anterior"
-                  onClick={() => handlePageChange(currentInternalPage - 1)}
-                  disabled={currentInternalPage >  totalPages - 1} 
-                  icon={<FontAwesomeIcon icon={faArrowLeft} size="lg" color="white" />} iconPosition='left'
-              />
-            )}
-              {currentInternalPage < totalPages && (
-              <CustomButton size='small'  buttonStyle="primary" theme="light" label="Pág. Siguiente"
-                onClick={() => handlePageChange(currentInternalPage + 1)}
-                disabled={currentInternalPage >= totalPages - 1} 
-                icon={<FontAwesomeIcon icon={faArrowRight} size="lg" color="white" />} iconPosition='right'
-              />
-            )}
-        </div>
-      )
-      }
-    </div>
-  </>
- );
-};
-
-
+    </>
+   );
+  };
 
 
 

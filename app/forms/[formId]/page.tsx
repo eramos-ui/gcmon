@@ -15,7 +15,7 @@ import { useSession } from 'next-auth/react';
 // import bcrypt from 'bcryptjs';
 
 // import { getInitialValuesDynamicForm } from '@/utils/initialValues';
-import { FormConfigDFType, GridRowDFType } from '@/types/interfaceDF';
+import { FormConfigDFType, FormFieldDFType, GridRowDFType } from '@/types/interfaceDF';
 
 // import { formatRut } from '@/utils/formatRut';
 // import {  getValidationSchemaDynamicForm } from '@/utils/validationSchema';
@@ -34,23 +34,32 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
   const [ formData, setFormData ]               = useState<FormConfigDFType | null>(null);//los campos del formulario dynamic
   const [ loading, setLoading ]                 = useState(true);
   const [ error, setError ]                     = useState<string | null>(null);
-  const [ rows, setRows ]                       = useState<GridRowDFType[]>( []);
+  const [ rows, setRows ]                       = useState<any[]>();//GridRowDFType
   const router                                  = useRouter();
   const [ initialValues, setInitialValues ]     = useState <{ [key: string]: any }>({} );
-  const [ table, setTable ]                     = useState<FormConfigDFType | null>(null);
+  // const [ table, setTable ]                     = useState<FormConfigDFType | null>(null);
+  // const [ table, setTable ]                     = useState<FormFieldDFType | null>(null);
   const [ isModalOpen, setIsModalOpen ]         = useState(false);
   const [ editingRowIndex, setEditingRowIndex ] = useState<number | null>(null);
   const [ isAdding, setIsAdding]                = useState(false);
   // const subMenuId = formId ? parseInt(formId, 1006) : 0;//el id del subMenu con el type FormConfigDFType
-  //console.log('FormPage formId',formId);
+  // console.log('FormPage formId',formId);
   // useEffect(()=>{
   //    console.log('useEffect formData',formData?.editFields);
   // },[formData])
+  const replaceParam=((param:string) => { 
+    switch ( param ){
+    case 'userId':      
+      return session?.user.id
+    default:
+    return param;   
+    }
+  })
   const reLoad=() =>{//al cerrar el modal carga la pagina de nuevo
     window.location.reload();
   }
   useEffect(() => {
-    async function fetchData() {
+    async function fetchData() {//lee el formId
       if (formId === 0) {
         setError('No valid subMenuId provided');
         setLoading(false);
@@ -88,8 +97,7 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
       try{
         const res = await fetch(`/api/${apiGetRows}`);
         const data = await res.json();
-          // console.log('en useEffect apiGetRows',apiGetRows);
-          // console.log('en useEffect rows',data);
+          // console.log('rows',data,apiGetRows)
         setRows(data);
       } catch (err) {
         if (err instanceof Error) {
@@ -102,7 +110,15 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
       }
     }
     setLoading(true);
-    const apiGetRows=formData?.table.apiGetRows;
+    let apiGetRows=formData?.table.apiGetRows;
+    // console.log('apiGetRows de la BD',apiGetRows)
+    if(apiGetRows?.includes('[')) { //la url tiene parámetro
+      const urlInicio=apiGetRows.split('[')[0];
+      const inicio=apiGetRows.split('[')[1];
+      const param=inicio.split(']')[0];      
+      apiGetRows=urlInicio+replaceParam(param)+inicio.split(']')[1];
+    }
+    // console.log('lee grilla',apiGetRows)
     if (apiGetRows) {
       fetchData(apiGetRows);
       setLoading(false);
@@ -114,23 +130,63 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
   if (!formData || loading ) {
     return <LoadingIndicator  message='cargando' />;    
   }
-  const handleDelete = (index: number) => {
-    const apiSaveForm=formData?.table.apiSaveForm;           
-   
-    const updateData = async () => {
-      try {
-        const body={...rows[index], action:'delete',idUserModification: session?.user.id};
-        console.log('en handleDelete body',body,apiSaveForm);
+  const handleDelete = async (index: number) => {
+    const apiSaveForm=formData?.table.apiSaveForm;  
+    const apiDeleteForm=formData?.table.apiDeleteForm; //case en que el delete no es un versión del documento, sin su eliminación. Es el case Evento, no el de Usuario    
+    const row =(rows && rows[index])?rows[index]: null;
+    const column=formData.table.objectColumnNumberNameToDelete || 0;//número de la columns con el label de la alerta, sin no se define elige la 1era columna
+    const col=formData.table.columns?.filter(c =>c.visible);//sólo las visible=true
+    const nameGridRowColumnNameDelete= (col && col.length>0) ?col[column].name:formData.table.objectGrid;//name de la columna para obtener el value
+    let labelAtributteDelete=formData.table.objectGrid +' ';//si no hay value mostrara el nombre de la grilla
+    if (nameGridRowColumnNameDelete && nameGridRowColumnNameDelete.length>0) 
+        labelAtributteDelete=labelAtributteDelete+'"'+row[nameGridRowColumnNameDelete].trim()+'"';
+    const confirmed =window.confirm(`Confirme la eliminación de ${labelAtributteDelete}`);  
+    if (!confirmed) return;
+    if (apiDeleteForm && apiDeleteForm.length>0) {
+      let ruta=apiDeleteForm;
+      if (ruta && ruta.includes('[')){
+        const urlInicio=ruta.split('[')[0];
+        const inicio=ruta.split('[')[1];
+        const param=inicio.split(']')[0];      
+        const valueParam=row[param];
+        ruta=urlInicio+replaceParam(valueParam)+inicio.split(']')[1];
+      }
+        try{
+          const response = await fetch(`/api/${ruta}`, {// el _id viene como query param. por ejemplo:: /api/forms(saveForm/deleteEvento?id=...
+            method: 'DELETE',    
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          const result=await response.json();  
+          if (response.ok) {
+            alert("Eliminado exitosamente..");
+            window.location.reload();
+          } else {
+            if (response.status === 400) {
+              alert(`${result.error}`); 
+            }else{
+              const errorMsg=( typeof result.error ==='object')? result.error.message:result.error;          
+              alert(`${errorMsg}, favor comuníquelo al administrador del sistema.`);  
+            }
+          }
+        } catch(error){
+        alert(`${error}, favor comuníquelo al administrador del sistema.`);
+        } 
+        return;     
+    }  
+    // console.log('en handleDelete api saveForm',`/api/${apiSaveForm}`);
+      try {//caso en que el DELETE no elimina sino que deja NO vigente
+        const body={row, action:'delete',idUserModification: session?.user.id};//manda toda la fila con action=DELETE
+        // console.log('body',body)
         const response = await fetch(`/api/${apiSaveForm}`, {
-        method: 'POST',    
-        body: JSON.stringify(body),
+          method: 'POST',    
+          body: JSON.stringify(body),
         });
         const result=await response.json();
         console.log('en handleDelete response',response.ok, result);
         if (response.ok) {
-          alert("Eliminado exitosamente");
-      //     // setTimeout(handleClose, 3000);
-      //     onClose();
+          alert("Eliminado exitosamente.");
         } else {
           if (response.status === 400) {
             alert(`${result.error}`);     
@@ -139,26 +195,10 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
             alert(`${result.error}, favor comuníquelo al administrador del sistema.`);    
           }
         }
-        // const response = await saveFormData(
-        //   apiSaveForm!,
-        //   { ...rows[index], action:'delete',idUserModification: session?.user.id },
-        //   formatRut,//va la función de formatRut para que se graben los ruts estándar
-        // );
-      //   if (response.success) {
-      //     alert("Item eliminado exitosamente");
-      //     // setTimeout(handleClose, 3000);
-      //   } else {
-      //     //console.log('en FormPage grabar response',response.error);
-      //     alert(`${response.error.error}, favor comuníquelo al administrador del sistema.`);          
-      //   }
        } catch (error) {
          alert(`${error}, favor comuníquelo al administrador del sistema.`);
-       }
-    };
-   console.log('en handleDelete index',index,apiSaveForm!); 
-   console.log('en handleDelete rows',rows[index]);
-   updateData();
-   window.location.reload();//recarga la página
+       }       
+      window.location.reload();//recarga la página
   };
   const themeClass = formData.theme === 'dark' ? 'theme-dark' : 'theme-light';
   const theme=formData.theme === 'dark' ? 'dark' : 'light';
@@ -170,6 +210,9 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
   };
   const formSize = formData.formSize || {};
   const handleEdit = (index: number) => {
+    // console.log ('en Page de formId handleEdit index',index )
+    
+    // const items = rows.items;
     setEditingRowIndex(index);
     setIsModalOpen(true);
     setIsAdding(false);
@@ -179,18 +222,25 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
     setIsModalOpen(true);
     setIsAdding(true);
   };
-  const handleClose=() =>{
-    
+  const handleClose=() =>{    
     router.push('/');
   }
-  // const spFetchSaveGrid=formData.table.spFetchSaveGrid;
-  // const apiGetRows=formData.table.apiGetRows;
+  const handleZoom=( row:any) =>{//actions de consulta en la grilla
+    if( !formData.table.zoomUrl) console.log('No esta definida la url que muestra la consulta');
+    let ruta=formData.table.zoomUrl;
+    if (ruta && ruta.includes('[')){
+      const urlInicio=ruta.split('[')[0];
+      const inicio=ruta.split('[')[1];
+      const param=inicio.split(']')[0];      
+      const valueParam=row[param];
+      ruta=urlInicio+replaceParam(valueParam)+inicio.split(']')[1];
+    }
+    router.push(`${ruta}`);
+  }
   const apiSaveform=formData.table.apiSaveForm;
-  //  console.log('FormPage formData',formData,loading);
-
   return (//Aquí va el despliegue de la grilla no editable con los datos de la tabla que se hace en FormTableGrid vía GridContainer
     <>
-    {/* { (() => { console.log('en jsx page ', formData.editFormSize); return null; })()} */}
+    {/* { (() => { console.log('en jsx page ', formData); return null; })()} */}
      {/* para que no marque error de {console.log ('en jsx page ',alertMessage) , null } */}
     { formData && formData.editFields && formData.editFields !== undefined && formData.table && formData.table !== undefined &&
       <div
@@ -204,17 +254,17 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
         {/* <h1 className="text-3xl font-bold mb-4">{formData.formTitle}</h1>  */}
           <>       
               { !loading && formData.table.columns && formData.table.actions && formData.table.columnWidths && formData.table.editFormConfig &&         
-              <GridContainer  columns={formData.table.columns} rows={rows} actions={formData.table.actions}  rowToShow={formData.table.rowToShow}
-                    columnWidths={formData.table.columnWidths} onEdit={handleEdit} handleAdd={handleAdd} table={formData.table}
-                    onDelete={handleDelete} editFormConfig={formData.table.editFormConfig} // Pasamos el editFormConfig a GridContainer
-                    label={formData.table.label} //requerido para los tooltips de la Actions
-                    objectGrid={formData.table.objectGrid}//para el tooltips de los botones de actions
-                />
+           <GridContainer  columns={formData.table.columns} rows={rows} actions={formData.table.actions} actionsTooltips={formData.table.actionsTooltips} 
+           rowToShow={formData.table.rowToShow} columnWidths={formData.table.columnWidths} onEdit={handleEdit} handleAdd={handleAdd} table={formData.table}
+           onDelete={handleDelete} editFormConfig={formData.table.editFormConfig} // Pasamos el editFormConfig a GridContainer
+           onZoom={handleZoom} label={formData.table.label} //requerido para los tooltips de la Actions
+           objectGrid={formData.table.objectGrid}//para el tooltips de los botones de actions
+         />
               }
               {isModalOpen && formData.table.editFormConfig && formData.table.columns && formData.table.editFormConfig && (
-                <EditForm isOpen={isModalOpen} onClose={() => reLoad()   } theme={formData.table.editFormConfig.theme} // onSubmit={handleFormAdd} 
-                  row={editingRowIndex !== null ? rows[editingRowIndex] : {}} columns={formData.table.columns} formId={Number(formId)}
-                  width={formData.editFormSize?.width} height={formData.editFormSize?.height} formConfig={ formData.table.editFormConfig as FormConfigDFType} // Pasa el editFormConfig al componente de edición
+                <EditForm isOpen={isModalOpen} onClose={() => reLoad()} theme={formData.table.editFormConfig.theme} // onSubmit={handleFormAdd} 
+                  row={(editingRowIndex !== null && rows) ? rows[editingRowIndex] : {}} columns={formData.table.columns} formId={Number(formId)} apiGetRow={ formData.table.apiGetRow}
+                  width={formData.editFormSize?.width} height={formData.editFormSize?.height} formConfig={ formData as FormConfigDFType} // Pasa el editFormConfig al componente de edición
                   requirePassword={formData.table.requirePassword} apiSaveForm={apiSaveform} isAdding={isAdding} fields={formData.editFields || []} //rows={rows} //setRows={setAllValues }
                 />
                 )} 

@@ -12,12 +12,14 @@ interface GridRowProps {
   columnWidths?: string[];
   onEdit: () => void;
   onDelete: () => void;
+  onZoom: () => void;
   label:string;
   objectGrid?:string;//para el tooltips de los botones de actions
-  actions: ('add' | 'edit' | 'delete')[];
+  actions: ('add' | 'edit' | 'delete' | 'zoom')[];
+  actionsTooltips?:{action:string,tooltips:string}[];
 }
 
-const GridRowComponent: React.FC<GridRowProps> = ({ row, columns , actions, objectGrid, columnWidths = [], onEdit, onDelete, label }) => {
+const GridRowComponent: React.FC<GridRowProps> = ({ row, columns , actions, objectGrid, columnWidths = [], onEdit, onDelete,onZoom, label }) => {
   // console.log('en GridRowComponent row', row )
   // if (row.nroGasto === '602') console.log('en GridRowComponent row', row )
   const renderCellValue = (column: GridColumnDFType, value: any) => {
@@ -61,7 +63,7 @@ const GridRowComponent: React.FC<GridRowProps> = ({ row, columns , actions, obje
         ) : null
       )}
       <td>
-         <FormGridActions onEdit={onEdit} onDelete={onDelete} label={label} objectGrid={objectGrid} actions={actions} />
+         <FormGridActions onEdit={onEdit} onDelete={onDelete} onZoom={onZoom} label={label} objectGrid={objectGrid} actions={actions} />
       </td>
     </tr>
   );

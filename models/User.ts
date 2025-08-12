@@ -36,7 +36,7 @@ const userSchema = new Schema({
     },
     theme: {
         type: String,
-        required: true
+        required: false
     },
     password: {
         type: String,
@@ -62,25 +62,21 @@ const userSchema = new Schema({
         type: String,
         required: false
     },
-    isValid:{
-        type: Boolean,
-        required: true,
-        default: true
-    },
+    // isValid:{
+    //     type: Boolean,
+    //     required: true,
+    //     default: true
+    // },
     valid:{
         type:String,
-        required:true,
+        required:false,
         default:'vigente'
     },
     idUser:{
         type:Number,
         required:false,
-        default:'vigente'
     },
-    system: {
-        type: String,
-        required: true
-    },
+
     role: {
         type: String,
         required: true

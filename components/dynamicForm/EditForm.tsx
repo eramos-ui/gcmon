@@ -36,6 +36,7 @@ interface EditFormProps { // formulario dynamic
   columns:GridColumnDFType[];
   isAdding?:boolean;
   apiSaveForm?:string;
+  apiGetRow?:string;//si es necesario leer los campos del formulario (cuando no corresponden a los de la grilla), el name parametro viene en la ApI [xxxxId] el valor está en row
   theme?:string;
   requirePassword?:boolean;
   formId:Number;
@@ -67,7 +68,7 @@ export const EditForm: React.FC<EditFormProps> = ({
   height,
   ...props
 }) => {
-  // console.log('en EditForm fields',fields);
+  //  console.log('en EditForm fields',fields);
     const formRef = useRef<HTMLFormElement | null>(null);
     // console.log('en EditForm row',row,row.idClaseMovimiento);
  
@@ -128,25 +129,27 @@ export const EditForm: React.FC<EditFormProps> = ({
 
     // const requirePassword=fields.find(field => field.type === 'password')?.requirePassword;
     const password = requirePassword ? await bcrypt.hash('password123', 10) : undefined;
-    //console.log('grabar',fields,requirePassword,password);    return;
+//     console.log('grabar',fields,requirePassword,password);    
+// return;
     const withRutFields=fields.filter(field => field.type === 'RUT');//field que tienen field type='RUT' para formatearlo estándar
-      let updateValues:any=values;
-      if (withRutFields && withRutFields.length > 0) {
+    let updateValues:any=values;
+    if (withRutFields && withRutFields.length > 0) {
           //actualizar rut de los values[field.name] cuando es un rut para que se graben ###.###.###-# , se hace 2 veces porque formatRut lo repite
         withRutFields.forEach((field:any) => {
           const valueRut=values[field.name];
           updateValues[field.name]=valueRut;
         });
-      }   
+    }   
       const changedItem=_.isEqual(updateValues,row); //compara si los valores de updateValues son iguales a los de row
       if (changedItem) {
         console.log('en FormPage grabar no hay cambios');
         return;
       } 
-      // console.log('en EditForm grabar updateValues',values, values.descripcion);return;   
+    //  console.log('en EditForm grabar updateValues',values, values.descripcion);return;   
     const apiSaveForms=`/api/${apiSaveForm}`;
-    const comentario=(values.descripcion)?values.descripcion:'';
-    const body={...updateValues,comentario, formId:formId,  idUserModification:session?.user.id};//siempre agrega el idUserModification
+    const rowValues={...updateValues};
+    // const comentario=(values.descripcion)?values.descripcion:'';
+    let body={row:rowValues, formId:formId,  idUserModification:session?.user.id, password};//siempre agrega el idUserModification
     // console.log('body',body,apiSaveForms)
     // return;
      try {
@@ -166,7 +169,8 @@ export const EditForm: React.FC<EditFormProps> = ({
           alert(`${result.error}`);     
         }else{
           console.log('en FormPage grabar response',result.error);
-          alert(`${result.error}, favor comuníquelo al administrador del sistema.`);    
+          const errorMsg=( typeof result.error ==='object')? result.error.message:result.message; 
+          alert(`${errorMsg}.`);     
         }
       }
     } catch (error) {
@@ -201,7 +205,7 @@ export const EditForm: React.FC<EditFormProps> = ({
          validateOnBlur={true} //ejecuta la validación Yup cuando el usuario sale del campo
          validateOnChange={true}//para que se ejecute la validación cuando el usuario cambia el valor del campo y borre el error
          validate={async (values) => {
-          // console.log("🔎 validate ejecutado con:", values);
+        //  console.log("🔎 validate ejecutado con:", values);
           const schema = getValidationSchemaDynamicForm(fields);
           try {
             await schema.validate(values, { abortEarly: false });
@@ -218,10 +222,11 @@ export const EditForm: React.FC<EditFormProps> = ({
          }}
 
         onSubmit={async (values, { setSubmitting, validateForm }) => {
-          // console.log("🚀 onSubmit ejecutado con:", values);
+           console.log("🚀 onSubmit ejecutado con:", values);
           const correctedValues = normalizeStringValues(values, fields);
           const errors = await validateForm(correctedValues);
-          // console.log('Errores de validación:',errors);
+
+           console.log('Errores de validación:',errors);
           if (Object.keys(errors).length === 0) {
             const _id = row._id;
             await grabar({ ...correctedValues, _id });
@@ -262,7 +267,7 @@ export const EditForm: React.FC<EditFormProps> = ({
                   />
                   <CustomButton label= {isSubmitting ? "Enviando..." : "Salvar cambios"}  buttonStyle='primary' formRef={formRef}
                     size='small' icon={<FontAwesomeIcon icon={faFloppyDisk} size="lg" color="white" />} htmlType='submit'
-                    tooltipContent='Salvar los cambios y volver a la página anterior' tooltipPosition='left' style={{ marginRight:25, marginBottom:30 }} 
+                    tooltipContent='Salvar los cambiose ir a la página anterior' tooltipPosition='left' style={{ marginRight:25, marginBottom:30 }} 
                   />
                   {/* <button
                     type="button"

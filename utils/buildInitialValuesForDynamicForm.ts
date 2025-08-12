@@ -1,4 +1,4 @@
-//para construir los valores iniciales del formulario dinámico cuando se trata de un nuevo registro
+//para construir los valores iniciales del formulario dinámico 
 import { FormFieldDFType } from "@/types/interfaceDF";
 
 export const buildInitialValues = (
@@ -7,13 +7,14 @@ export const buildInitialValues = (
 ): Record<string, any> => {
   const initial: Record<string, any> = {};
   initial['_id']=undefined;
-  
+  // console.log('en buildInitialValues fields',fields)
+  // console.log('en buildInitialValues row',row)
   fields.forEach(field => {
     const fieldName = field.name;
 
     // Usa el valor de `row` si existe (modo edición)
     if (row.hasOwnProperty(fieldName)) {
-      initial[fieldName] = row[fieldName];
+      initial[fieldName] = row[fieldName];//el valor viene en la row que se edita
     } else {
       // Si no, define un valor por defecto según tipo
       switch (field.type) {
@@ -23,14 +24,15 @@ export const buildInitialValues = (
           // console.log('en buildInitialValues number',initial[fieldName]);
           break
         case "selectNumber":
-          initial[fieldName] = 0;
+          // console.log('********buildInitialValue field',field)
+          initial[fieldName] = (field.value)?field.value:0;
           break;
         case "select":
         case "text":
         case "email":
         case "RUT":
         case "input":
-        case "textarea":
+        case "textarea":          
           initial[fieldName] = field.value;
           break;
         case "date":
@@ -44,6 +46,6 @@ export const buildInitialValues = (
       }
     }
   });
-  //console.log('en buildInitialValues',initial);
+  // console.log('en buildInitialValues',initial);
   return initial;
 };

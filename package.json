@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "fix-dates": "ts-node scripts/fixDatesGastos.cjs"
+    "fix-dates": "ts-node scripts/suma4horasIngresos.cjs"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",

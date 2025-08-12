@@ -35,3 +35,4 @@ export const useLabels = () => {
 
   return { labels, error }; // Devuelve los labels y el error para usar en otros componentes
 };
+

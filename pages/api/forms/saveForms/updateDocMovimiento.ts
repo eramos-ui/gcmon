@@ -34,28 +34,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const fechaHoyDate=new Date(yh,mh-1,dh);
   const hoyString=fechaHoyDate.toISOString();
 
-  const { tipoDocumento, fechaDocumento, nroDocumento, idCasa, idUserModification, idClaseMovimiento, monto, comentario, idFamilia } = JSON.parse(req.body);
-  const d=fechaDocumento.split('-')[0];
-  const m=fechaDocumento.split('-')[1];
-  const y=fechaDocumento.split('-')[2]; 
+  const {row, idUserModification, actions } = JSON.parse(req.body);
+  const d=row.fechaDocumento.split('-')[0];
+  const m=row.fechaDocumento.split('-')[1];
+  const y=row.fechaDocumento.split('-')[2]; 
   const fechaDocumentoDate=new Date(y,m-1,d);
   const fechaDocumentoString=fechaDocumentoDate.toISOString();
-  console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento,fechaDocumentoDate,fechaDocumentoString,hoyString)
+  // console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento,fechaDocumentoDate,fechaDocumentoString,hoyString)
+  
   // return res.status(405).json({ message: 'Probando' });
   const familias = await Familia.find({ //devuelve un array? y findOne no anda
       mesInicio: { $lte: añoMesActual },
       mesTermino: { $gte: añoMesActual }
       }).lean();
 
-  const familia=familias.find(familia => familia.idFamilia === idFamilia);
+  const familia=familias.find(familia => familia.idFamilia === row.idFamilia);
   // console.log('en updateDocMovimiento familia',familia);
-  if (!tipoDocumento || (tipoDocumento !=="INGRESO" && tipoDocumento !=="GASTO") ) {
+  if (!row.tipoDocumento || (row.tipoDocumento !=="INGRESO" && row.tipoDocumento !=="GASTO") ) {
     return res.status(400).json({ error: "tipoDocumento debe ser 'GASTO' o 'INGRESO'" });
   }
   const docUsuario=await User.findOne({_id:idUserModification, vigente:true});
   const idUsuario=docUsuario?.idUser;
+  const tipoDocumento=row.tipoDocumento;
   // Seleccionar el modelo adecuado
-  const Model = tipoDocumento === "GASTO" ? DocGasto : DocIngreso;
+  const Model = row.tipoDocumento === "GASTO" ? DocGasto : DocIngreso;
   // Buscar el nroDocumento más alto
   const ultimo = await Model.findOne({ tipoDocumento })
   .sort({ nroDocumento: -1 })
@@ -86,14 +88,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const clases = await ClaseMovimiento.find({ idOrganizacion: 1 }); 
   // console.log('en updateDocMovimiento ultimo',ultimo,nuevoNro);
-  let abono = Number(monto);
+  let abono = Number(row.monto);
   // const fechaDocumento = nuevoDoc.createdAt;
   let nuevoDoc:any;   
   if ( tipoDocumento === "INGRESO"){//en los documentos las fechas creteAt y updatedAt son string y en las carteras fechaMovimiento y fechaDocumento son Date
-      if (!idFamilia ) {
+      if (!row.idFamilia ) {
         return res.status(400).json({ error: "idFamilia debe ser obligatorio para 'INGRESO'" });
       }
-      const idFamiliaNumber=Number(idFamilia);
+      const idFamiliaNumber=Number(row.idFamilia);
       const familia=familias.find(familia => familia.idFamilia === idFamiliaNumber);
       const idCasa=familia?familia.idCasa:0;
       
@@ -103,8 +105,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         nroDocumento: nuevoNro,
         idCasa:familia?idCasa:0,
         idUsuario,
-        monto:Number(monto),
-        comentario:comentario||'',//es para los gastos
+        monto:Number(row.monto),
+        comentario:row.comentario||'',//es para los gastos
         claseMovimiento:0,//es para los gastos
         createAt:fechaDocumentoString,//fecha de movimiennto en Doc es string
         updatedAt:  hoyString,//fechaDocumento en Doc es string
@@ -117,7 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .sort({ nroDocumento: -1 })      
       .lean() as { nroDocumento?: number } | null;
 
-      const claseMov:number=(idClaseMovimiento === 0)? undefined: idClaseMovimiento;
+      const claseMov:number=(row.idClaseMovimiento === 0)? undefined: row.idClaseMovimiento;
       const deudas = await getSaldoCasaFondo(idCasa, claseMov);
       for (const deuda of deudas) {
         const {
@@ -149,7 +151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
          nuevoNroCarteraIngreso=nuevoNroCarteraIngreso+1;
          await CarteraIngreso.create(newCarteraIngreso);
        }
-    }
+  }
 
   if ( tipoDocumento === "GASTO"){
       // const hoyString=hoy.toISOString();
@@ -161,9 +163,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         nroDocumento:nuevoNro,
         idCasa:0,
         idUsuario,
-        claseMovimiento:Number(idClaseMovimiento),
-        monto:Number(monto),
-        comentario: comentario||'',
+        claseMovimiento:Number(row.idClaseMovimiento),
+        monto:Number(row.monto),
+        comentario: row.comentario||'',
       });
       console.log('en updateDocMovimiento Egreso nuevoDoc',nuevoDoc);
       await nuevoDoc.save();
@@ -179,9 +181,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         fechaDocumento: fechaDocumentoDate,//en cartera es Date
         fechaMovimiento: hoy,//en cartera es Date
         idCasa:0,
-        claseMovimiento:Number(idClaseMovimiento),
+        claseMovimiento:Number(row.idClaseMovimiento),
         entradaSalida: 'E',
-        monto:Number(monto),
+        monto:Number(row.monto),
       }
       console.log('newCarteraGasto registra Egreso',newCarteraGasto)
       // Insertar en CarteraGasto como ENTRADA

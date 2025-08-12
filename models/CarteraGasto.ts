@@ -11,13 +11,10 @@ const carteraGastoSchema = new Schema({
     tipoDocumentoRef:{type: String, required:true},
     nroDocumentoRef:{type: Number, required:true},
     idCasa:{type: Number, required:true},
-    // mesPago:{type: Number, required:true},
     claseMovimiento:{type: Number, required:true},
     entradaSalida:{type: String, required:true},
     monto:{type: Number, required:true},
 },
-// {
-//     timestamps: false 
-// }
+
 );
 export const CarteraGasto = models.CarteraGasto || model('CarteraGasto', carteraGastoSchema,'carteraGasto');

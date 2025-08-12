@@ -1,7 +1,7 @@
 import {  ValidationRule } from "./interfaces";
 
-export type InputDFType = 'text' |'input' | 'email' | 'selectNumber' | 'select' | 'password' | 'date' |'textarea' 
-        | 'number' | 'file' | 'grid' | 'multiselect'| 'autocomplete' | 'RUT' |'sin' | 'conditionalRequired' ;
+export type InputDFType = 'text' |'input' | 'email' | 'selectNumber' | 'select' | 'password' | 'date' |'textarea' | 'url'
+        | 'number' | 'file' | 'grid' | 'multiselect'| 'autocomplete' | 'RUT' |'sin' | 'conditionalRequired' | 'label' | "boolean" ;
 export interface ButtonConfigDFType {
     id: string;
     text: string;
@@ -16,7 +16,7 @@ export interface ButtonConfigDFType {
     [key: string]: string | number  | boolean | Date | null | undefined;
   } 
    type ValidationDFType = 'required' | 'maxLength' | 'minLength' | 'email' | 'minDate' | 'maxDate' | 'min' |'max' |'url' |'pattern'|'rut' |'pattern'
-      | 'valueGreaterThanZero'  | 'conditionalRequired';
+      | 'valueGreaterThanZero'  | 'conditionalRequired' | 'maxFileSizeMB' | 'maxFiles' | 'accept';
    interface ValidationDFRule {
     type: ValidationDFType;
     field?: string;
@@ -51,6 +51,7 @@ export interface ButtonConfigDFType {
     columns?: GridColumnDFType[];// Para el grid
     rows?: GridRowDFType[]; // Para el grid
     actions?: ('add' | 'edit' | 'delete')[]; // Para el grid
+    actionsTooltips?:{action:string,tooltips:string}[];//tooltips de actions en la grilla
     rowHeight?: string; // Altura de las filas
     columnWidths?: string[]; // Anchos de las columnas para el grid
     gridWidth?:string;//ancho total grilla 
@@ -66,6 +67,7 @@ export interface ButtonConfigDFType {
     apiOptions?: string;
     spFetchSaveGrid?:string;
     apiSaveForm?:string;
+    apiDeleteForm?:string;
     requirePassword?:boolean; 
     padding?:string;
     marginBottom?:string;
@@ -73,6 +75,16 @@ export interface ButtonConfigDFType {
     borderWidth?:string;
     row:number;
     formatNumber?:boolean;
+    size?:'normal' | 'h1' | 'h2' | 'h3'  | 'normal+';//para el label
+    accept?:string; //para el file input
+    maxHeight?:string,//para select
+    overflowY:'auto' | 'scroll' | 'hidden' | 'visible',//para select
+    multiple?:boolean;
+    apiGetRow?:string;
+    zoomUrl?:string;
+    withTime?:boolean;//para CustomDate
+    timeIntervals?:number; //en minutos para CustomDate
+    objectColumnNumberNameToDelete?:number;//lo que aparece en la alert para identificar la fila a eliminar, es el columns[index].name 
   }
   export interface ModalStylesDFType {
     overlay?: React.CSSProperties;

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GridColumnDFType } from '@/types/interfaceDF';
 
 interface GridHeaderProps {
@@ -9,7 +9,11 @@ interface GridHeaderProps {
 }
 
 const FormGridHeader: React.FC<GridHeaderProps> = ({ columns, columnWidths = [], actions, label }) => {
-  //console.log('en GridHeader', actions )
+  // console.log('en GridHeader', actions,label )
+  const [ vaActions, setVaAction ]  = useState(false);
+  useEffect(()=>{
+    if (actions.length <=1 && actions[0]==='add') setVaAction(false) //el add no requiere columna
+  },[])
   const capitalizeFirstLetter = (str: string): string => {
     if (!str) return str; // Retorna el string tal cual si está vacío o es undefined
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -27,7 +31,7 @@ const FormGridHeader: React.FC<GridHeaderProps> = ({ columns, columnWidths = [],
             </th>
           ) : null
         )}
-        {actions && actions.length > 0 && <th>Acciones</th>}
+        {vaActions  && <th>Acciones</th>}
       </tr>
     </thead>
   );

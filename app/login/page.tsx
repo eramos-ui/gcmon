@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSignInAlt } from '@fortawesome/free-solid-svg-icons';
 import { Footer } from '@/components/general/Footer';
 
-const LoginPage = () => {//eramos@cibeles.cl    poiuyt
+const LoginPage = () => {
   
     const [ email, setEmail ]       = useState('');
     const [ password, setPassword ] = useState('');
@@ -62,7 +62,7 @@ const LoginPage = () => {//eramos@cibeles.cl    poiuyt
                 <FontAwesomeIcon icon={faSignInAlt} className="mr-1" />
                 Ingresar con clave interna
               </button>
-              <div className="my-4 text-center text-gray-600">o</div>
+              {/* <div className="my-4 text-center text-gray-600">o</div>
               <button
                 onClick={() => handleSocialLogin('google')}
                 className="w-full bg-white text-black border border-gray-300 px-4 py-2 rounded hover:bg-gray-100 mb-4 flex items-center justify-center"
@@ -92,7 +92,7 @@ const LoginPage = () => {//eramos@cibeles.cl    poiuyt
                   />
                 </svg>
                 Conectarse con Google
-              </button>
+              </button> */}
 
               <Footer />
             </div>

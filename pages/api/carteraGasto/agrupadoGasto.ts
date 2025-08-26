@@ -15,6 +15,7 @@ const claseMovimientoMap = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
   const { year, clase_movimiento } = req.query;
+  // console.log('API cartera Gasto', year, clase_movimiento)
 
   const clasesPermitidas = claseMovimientoMap[clase_movimiento as keyof typeof claseMovimientoMap] || [];
   

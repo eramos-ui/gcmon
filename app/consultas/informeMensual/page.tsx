@@ -44,9 +44,6 @@ const InformeMensualPage = () => {
   const [ year, setYear ]                                         = useState<number>(0);
   const [ currentPage, setCurrentPage ]                           = useState<number>(0);
   const [ gridKey, setGridKey ]                                   = useState<number>(0);
-  
-
-
   const [ gridColumns, setGridColumns ]                           = useState<ColumnConfigType<GridRowType>[]>(columns);
   useEffect(() => {
         const fetchData = async () => {
@@ -66,22 +63,26 @@ const InformeMensualPage = () => {
   }
   const handleChangeInforme = (value: string) => {
     setInforme(value);
-    // console.log('value',value);
+    console.log('value',value);
   }
   const fetchRows = async () => {
-    setLoading(true);
+    // console.log('al presionar botón informe',informe)
+    let newData:any[];
+    let api='';
     if (informe.startsWith('INGRESO')) {
-      const response = await fetch(`/api/carteraIngreso/agrupado?year=${year}&clase_movimiento=${informe}`);
-      const data = await response.json();
-      setRows(data); 
+      api=`/api/carteraIngreso/agrupado?year=${year}&clase_movimiento=${informe}`;
+      const response = await fetch(api);
+      newData = await response.json();    
     } else {
-      const response = await fetch(`/api/carteraGasto/agrupadoGasto?year=${year}&clase_movimiento=${informe}`);
-      const data = await response.json();
-      // console.log('data',data);
-      setRows(data);   
+      api=`/api/carteraGasto/agrupadoGasto?year=${year}&clase_movimiento=${informe}`;
+      const response = await fetch(api);
+      newData = await response.json();
     }
+    setRows(newData);   
+
   }
   const handleGenerateInforme = () => {
+
     setCurrentPage(0);
     setGridKey(prev => prev + 1); // Forzar re-render montando de nuevo la grid
       // Actualizar columnas condicionales
@@ -100,6 +101,8 @@ const InformeMensualPage = () => {
       }
       return col;
     });
+    setRows([]);//para que ocurra el refresh sin tener que hacer otro clic en el botón
+    setLoading(true);
     setGridColumns(updatedColumns);
     fetchRows();
     setLoading(false);
@@ -110,6 +113,7 @@ const InformeMensualPage = () => {
   return (
     <div className="p-4">
       <h1 className="text-3xl font-bold">Informe Mensual</h1>
+      <h3 className="text-xl font">Primero seleccione el año, luego el informe y aparecerá un botón que permite generar el informe</h3>
       <div className="mb-1 flex items-start space-x-3">
         <div className="w-1/5" >
           <CustomSelect  width='180px' theme="light"  label='Año' captionPosition='top'

@@ -16,6 +16,7 @@ const claseMovimientoMap: Record<string, number[]> = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 await connectDB();
 const { year, clase_movimiento } = req.query;
+// console.log('API cartera Ingreso', year, clase_movimiento)
 const clasesPermitidas = claseMovimientoMap[clase_movimiento as string] || [];
 const mesInicio = Number(year) * 100 + 1;
 const mesFin = Number(year) * 100 + 12;

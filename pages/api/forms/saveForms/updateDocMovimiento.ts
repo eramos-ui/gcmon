@@ -165,7 +165,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         idUsuario,
         claseMovimiento:Number(row.idClaseMovimiento),
         monto:Number(row.monto),
-        comentario: row.comentario||'',
+        comentario: row.descripcion ||'',
       });
       console.log('en updateDocMovimiento Egreso nuevoDoc',nuevoDoc);
       await nuevoDoc.save();

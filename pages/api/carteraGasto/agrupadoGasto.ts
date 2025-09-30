@@ -1,4 +1,4 @@
-import { connectDB } from '@/lib/db';
+import { connectDB } from '@/lib/db'; 
 
 import { NextApiRequest, NextApiResponse } from 'next';
 import { formatGrilla } from '@/utils/formatGrilla';
@@ -117,6 +117,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
   ])
+
 //   res.status(200).json(rawResults);
  const rowResultsIngresoCompatible=rawResults.map((row:any) =>{
   const codigoCasa=(row.claseMovimiento<10) ? ' '+row.claseMovimiento.toString() : row.claseMovimiento.toString();//para que el orden sea correcto y es por codigoCasa

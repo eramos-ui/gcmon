@@ -26,6 +26,7 @@ import { FieldComponentDF } from '../dynamicForm/FieldComponentDF';
 import { useEffect, useMemo, useState } from 'react';
 import { buildInitialValues } from '@/utils/buildInitialValuesForDynamicForm';
 import { normalizeStringValues } from '@/utils/normalizeStringValue';
+import { ReturnDocument } from 'mongodb';
 
 interface EditFormProps { // formulario dynamic
   formConfig: FormConfigDFType;
@@ -151,14 +152,14 @@ export const EditForm: React.FC<EditFormProps> = ({
     // const comentario=(values.descripcion)?values.descripcion:'';
     let body={row:rowValues, formId:formId,  idUserModification:session?.user.id, password};//siempre agrega el idUserModification
     // console.log('body',body,apiSaveForms)
-    // return;
+  
      try {
       const response = await fetch(`${apiSaveForms}`, {
         method: 'POST',    
         body: JSON.stringify(body),
       });
       const result=await response.json();
-      // console.log('en EditForm grabar response',response.ok, result);
+      //console.log('en EditForm grabar response',response.ok, result);      
       if (response.ok) {
         alert("Grabado exitosamente");
         setTimeout(()=>{

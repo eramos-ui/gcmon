@@ -130,8 +130,9 @@ export const EditForm: React.FC<EditFormProps> = ({
 
     // const requirePassword=fields.find(field => field.type === 'password')?.requirePassword;
     const password = requirePassword ? await bcrypt.hash('password123', 10) : undefined;
-//     console.log('grabar',fields,requirePassword,password);    
-// return;
+    //  console.log('grabar fields',fields);    
+    //  console.log('grabar requirePassword',requirePassword);   
+//  return;
     const withRutFields=fields.filter(field => field.type === 'RUT');//field que tienen field type='RUT' para formatearlo estándar
     let updateValues:any=values;
     if (withRutFields && withRutFields.length > 0) {
@@ -146,8 +147,9 @@ export const EditForm: React.FC<EditFormProps> = ({
         console.log('en FormPage grabar no hay cambios');
         return;
       } 
-    //  console.log('en EditForm grabar updateValues',values, values.descripcion);return;   
     const apiSaveForms=`/api/${apiSaveForm}`;
+    // console.log('en EditForm grabar apiSaveForms',apiSaveForms);
+    // console.log('en EditForm grabar updateValues',values);return;   
     const rowValues={...updateValues};
     // const comentario=(values.descripcion)?values.descripcion:'';
     let body={row:rowValues, formId:formId,  idUserModification:session?.user.id, password};//siempre agrega el idUserModification

@@ -14,8 +14,7 @@ import { CarteraGasto } from '@/models/CarteraGasto';
 import { ClaseMovimiento } from '@/models/ClaseMovimiento';
 import { User } from '@/models/User';
 import { Familia } from '@/models/Familia';
-import { ReturnDocument } from 'mongodb';
-// import { Casa } from '@/models/Casa';
+import { formatMoney } from '@/utils/formatMoney';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();
@@ -97,8 +96,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const idFamiliaNumber=Number(row.idFamilia);
       const familia=familias.find(familia => familia.idFamilia === idFamiliaNumber);
-      const idCasa=familia?familia.idCasa:0;
-      
+      const idCasa=familia?familia.idCasa:0;      
       
       nuevoDoc = new Model({
         tipoDocumento,
@@ -111,16 +109,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         createAt:fechaDocumentoString,//fecha de movimiennto en Doc es string
         updatedAt:  hoyString,//fechaDocumento en Doc es string
       });
-        console.log('nuevoDoc ingreso', nuevoDoc)
+      //  console.log('nuevoDoc ingreso', nuevoDoc)
+       const claseMov:number=(row.idClaseMovimiento === 0)? undefined: row.idClaseMovimiento;
+       //chequea que el monto total de los ingresos devengados sea mayor al del ingreso que se quiere grabar
+       const deudas = await getSaldoCasaFondo(idCasa, claseMov); //saldo por pagar de la casa y claseMovimiento
+      //  console.log('deudas',deudas);
+       const totalSaldo = deudas.reduce((acumulador, objeto) => acumulador + objeto.saldo, 0);
+      //  console.log('nuevoDoc.monto  totalSaldo',nuevoDoc.monto ,totalSaldo);
+       if (nuevoDoc.monto > totalSaldo) {
+          const montoIngreso=formatMoney(nuevoDoc.monto);
+          const montoSaldo=formatMoney(totalSaldo);
+          const errorMsg=`Ingreso de $${montoIngreso}, excede el saldo por pagar de la casa $${montoSaldo}.`;
+         return res.status(400).json({ error: `${errorMsg}` });
+       };
+     
        await nuevoDoc.save();
        // return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
       
-      const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})
-      .sort({ nroDocumento: -1 })      
-      .lean() as { nroDocumento?: number } | null;
+      // const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})
+      // .sort({ nroDocumento: -1 })      
+      // .lean() as { nroDocumento?: number } | null;
 
-      const claseMov:number=(row.idClaseMovimiento === 0)? undefined: row.idClaseMovimiento;
-      const deudas = await getSaldoCasaFondo(idCasa, claseMov);
       for (const deuda of deudas) {
         const {
           tipoDocumentoRef,

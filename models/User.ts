@@ -62,11 +62,6 @@ const userSchema = new Schema({
         type: String,
         required: false
     },
-    // isValid:{
-    //     type: Boolean,
-    //     required: true,
-    //     default: true
-    // },
     valid:{
         type:String,
         required:false,

@@ -1,4 +1,9 @@
 // pages/api/forms/loadGrid/getUltimosAportes.ts
+/*
+Lee los últimos aportes (ingresos) realizados, junto con la información de la familia y casa asociada.
+Utiliza los modelos DocIngreso, Familia y Casa para obtener los datos necesarios desde la base de datos MongoDB.
+Devuelve un array de objetos que contienen los detalles del ingreso, la familia y la casa correspondiente.
+*/
 /* Explicación del use de find o findOne (JavaScript) o aggregate de MongoDB (como getUltimosGastos)
 Objetivo	Mejor opción
 Obtener 1 documento sin transformación	findOne()

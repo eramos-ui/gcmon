@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Método no permitido' });
   }
-  
+ 
   const hoyStringCh=hoy.toLocaleDateString('es-CL');//truco para formatear string yyyy-mm-dd
   const dh=Number(hoyStringCh.split('-')[0]);
   const mh=Number(hoyStringCh.split('-')[1]);
@@ -39,22 +39,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const y=row.fechaDocumento.split('-')[2]; 
   const fechaDocumentoDate=new Date(y,m-1,d);
   const fechaDocumentoString=fechaDocumentoDate.toISOString();
-  // console.log('fechaDocumento',fechaDocumento, typeof fechaDocumento,fechaDocumentoDate,fechaDocumentoString,hoyString)
-  
-  // return res.status(405).json({ message: 'Probando' });
+
   const familias = await Familia.find({ //devuelve un array? y findOne no anda
       mesInicio: { $lte: añoMesActual },
       mesTermino: { $gte: añoMesActual }
       }).lean();
 
-  const familia=familias.find(familia => familia.idFamilia === row.idFamilia);
-  // console.log('en updateDocMovimiento familia',familia);
+  const familia=familias.find(familia => familia.idFamilia === row.idFamilia);  
+  
   if (!row.tipoDocumento || (row.tipoDocumento !=="INGRESO" && row.tipoDocumento !=="GASTO") ) {
     return res.status(400).json({ error: "tipoDocumento debe ser 'GASTO' o 'INGRESO'" });
   }
   const docUsuario=await User.findOne({_id:idUserModification, vigente:true});
   const idUsuario=docUsuario?.idUser;
   const tipoDocumento=row.tipoDocumento;
+  const nroDocumento=row.nroDocumento;
+  const esModificacion= (nroDocumento && nroDocumento>0)? true:false;//si tiene nroDocumento es una modificación
+  if (tipoDocumento ==="GASTO" && esModificacion){
+    return res.status(400).json({ error: "No se permiten modificaciones en documentos del tipo 'EGRESO'" });
+  }
+  // console.log('fechaDocumento,familia, tipoDocumento, nroDocumento, esModificacion',fechaDocumentoDate,familia, tipoDocumento,nroDocumento,esModificacion)
+      //  return res.status(405).json({ message: 'Probando' });
   // Seleccionar el modelo adecuado
   const Model = row.tipoDocumento === "GASTO" ? DocGasto : DocIngreso;
   // Buscar el nroDocumento más alto
@@ -96,8 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       const idFamiliaNumber=Number(row.idFamilia);
       const familia=familias.find(familia => familia.idFamilia === idFamiliaNumber);
-      const idCasa=familia?familia.idCasa:0;      
-      
+      const idCasa=familia?familia.idCasa:0;        
       nuevoDoc = new Model({
         tipoDocumento,
         nroDocumento: nuevoNro,
@@ -109,21 +113,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         createAt:fechaDocumentoString,//fecha de movimiennto en Doc es string
         updatedAt:  hoyString,//fechaDocumento en Doc es string
       });
-      //  console.log('nuevoDoc ingreso', nuevoDoc)
+       //console.log('nuevoDoc ingreso', nuevoDoc)
        const claseMov:number=(row.idClaseMovimiento === 0)? undefined: row.idClaseMovimiento;
        //chequea que el monto total de los ingresos devengados sea mayor al del ingreso que se quiere grabar
        const deudas = await getSaldoCasaFondo(idCasa, claseMov); //saldo por pagar de la casa y claseMovimiento
-      //  console.log('deudas',deudas);
-       const totalSaldo = deudas.reduce((acumulador, objeto) => acumulador + objeto.saldo, 0);
-      //  console.log('nuevoDoc.monto  totalSaldo',nuevoDoc.monto ,totalSaldo);
+       //  console.log('deudas',deudas);
+       
+       let totalSaldo = deudas.reduce((acumulador, objeto) => acumulador + objeto.saldo, 0) ;
+       //  console.log('nuevoDoc.monto  totalSaldo',nuevoDoc.monto ,totalSaldo);
+       const docExistente=await Model.findOne({ tipoDocumento, nroDocumento });
+       if (esModificacion){//eliminar el movimiento y las carteras de ingreso y gasto
+              const docExistente=await Model.findOne({ tipoDocumento, nroDocumento });
+              totalSaldo=totalSaldo+docExistente.monto;
+       }
+      //  console.log('docExistente a modificar,totalSaldo',docExistente,totalSaldo);
        if (nuevoDoc.monto > totalSaldo) {
           const montoIngreso=formatMoney(nuevoDoc.monto);
           const montoSaldo=formatMoney(totalSaldo);
           const errorMsg=`Ingreso de $${montoIngreso}, excede el saldo por pagar de la casa $${montoSaldo}.`;
          return res.status(400).json({ error: `${errorMsg}` });
        };
-     
-       await nuevoDoc.save();
+       if (esModificacion){//eliminar el movimiento y las carteras de ingreso y gasto
+              // console.log('esModificacion -docExistente'  ,docExistente); 
+              if (docExistente){
+                await DocIngreso.deleteOne({ tipoDocumento, nroDocumento });
+                const carterasIngresoExistentes=await CarteraIngreso.find({ tipoDocumento, nroDocumento });
+                // console.log('carterasIngresoExistentes a modificar',carterasIngresoExistentes);
+                for (const cartera of carterasIngresoExistentes){
+                  // console.log('eliminando cartera ingreso',cartera);
+                  await CarteraIngreso.deleteOne({ nroMovimiento: cartera.nroMovimiento  });
+                }
+                const carterasGastosExistentes=await CarteraGasto.find({ tipoDocumento, nroDocumento });
+                // console.log('carterasGastosExistentes a eliminar',carterasGastosExistentes);
+                for (const cartera of carterasGastosExistentes){
+                  // console.log('eliminando cartera gasto',cartera);
+                  await CarteraGasto.deleteOne({ nroMovimiento: cartera.nroMovimiento  });
+                }
+              } 
+       }
+      if (nuevoDoc.monto <= 0){
+        return res.status(200).json({ message: 'Documento eliminado con éxito por monto meno o igual a 0', nuevoDoc});
+      }
+      await nuevoDoc.save();
        // return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
       
       // const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})

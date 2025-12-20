@@ -37,16 +37,10 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
   const [ rows, setRows ]                       = useState<any[]>();//GridRowDFType
   const router                                  = useRouter();
   const [ initialValues, setInitialValues ]     = useState <{ [key: string]: any }>({} );
-  // const [ table, setTable ]                     = useState<FormConfigDFType | null>(null);
-  // const [ table, setTable ]                     = useState<FormFieldDFType | null>(null);
   const [ isModalOpen, setIsModalOpen ]         = useState(false);
   const [ editingRowIndex, setEditingRowIndex ] = useState<number | null>(null);
   const [ isAdding, setIsAdding]                = useState(false);
-  // const subMenuId = formId ? parseInt(formId, 1006) : 0;//el id del subMenu con el type FormConfigDFType
-  // console.log('FormPage formId',formId);
-  // useEffect(()=>{
-  //    console.log('useEffect formData',formData?.editFields);
-  // },[formData])
+
   const replaceParam=((param:string) => { 
     switch ( param ){
     case 'userId':      
@@ -131,7 +125,7 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
     return <LoadingIndicator  message='cargando' />;    
   }
   const handleDelete = async (index: number) => {
-    const apiSaveForm=formData?.table.apiSaveForm;  
+    const apiSaveForm=formData?.table.apiSaveForm;
     const apiDeleteForm=formData?.table.apiDeleteForm; //case en que el delete no es un versión del documento, sin su eliminación. Es el case Evento, no el de Usuario    
     const row =(rows && rows[index])?rows[index]: null;
     const column=formData.table.objectColumnNumberNameToDelete || 0;//número de la columns con el label de la alerta, sin no se define elige la 1era columna

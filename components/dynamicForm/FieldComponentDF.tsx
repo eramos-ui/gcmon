@@ -1,7 +1,7 @@
 import { FormFieldDFType } from "@/types/interfaceDF"; 
 import {   FormikErrors, FormikTouched  } from "formik";
 
-import { CustomFileInput,  CustomInput, CustomSelect, CustomDate } from "@/components/controls";
+import { CustomFileInput,  CustomInput, CustomSelect, CustomDate, CustomLabel } from "@/components/controls";
       
 import { useState } from "react";
 import { LoadingIndicator } from "../general/LoadingIndicator";
@@ -26,6 +26,7 @@ y aplica lógica condicional a través de requiredIf
 */
 export const FieldComponentDF: React.FC<FieldComponentDFProps> = ({ field, values, setFieldValue, errors, touched, theme }) => {
   //if (field.name === 'monto') console.log('en FieldComponentDF field',field);  
+  // console.log(' en FieldComponentDF:',field, values, setFieldValue, errors, touched, theme)
   const [ datosSelect, setDatosSelect ]         = useState<Option[]>(); // Estado local para las opciones
   const [ loading, setLoading ]                 = useState(false);
 
@@ -78,6 +79,7 @@ export const FieldComponentDF: React.FC<FieldComponentDFProps> = ({ field, value
   // console.log('en FieldComponentDF field',field,isVisible);
   //'text' | 'password' | 'email' | 'number' | 'tel' | 'url' | 'search' | 'color' | 'file' | 'RUT'
   // console.log('en FieldComponentDF field',field.type,field.name,field.label);
+  // console.log('field',field);
   switch (field.type) {//Eliminado <Field> para menor abstracción, el <Field es un wrapper de Formik que conecta AUTOMATICAMENTE: values, errors, touched...
     case 'input':
       return(
@@ -143,66 +145,17 @@ export const FieldComponentDF: React.FC<FieldComponentDFProps> = ({ field, value
       )
     case 'file'://falta probar
        return <CustomFileInput {...commonProps} accept={".img, .jpg, .png, .pdf"} />;
+    case 'label': //rotulo sin input
+      return (        
+        <div>
+          <label >
+              {label} 
+          </label>
+         {/* <span style={{ marginLeft: "10px" }}>El texto</span>  */}
+          <CustomLabel label={field.value} size='normal+'   />
+        </div>
+      )  
     default:
       // return <CustomInput {...commonProps} type="text" />;
   }
 };
-/*
-  switch (type) {
-      case 'input':
-      case 'text':
-      case 'password':
-      case 'email':
-       // if (type==='email') console.log('en FieldComponentDF field',type,field,fieldName,errors[fieldName], touched[fieldName] );
-        return (
-            <div>
-                <Field as={CustomInput}  type={(type ==='text' || type ==='input')?'text':type} width={width}
-                  name={name}
-                  label={label}
-                  required={field.validations?.some(v => v.type === "required")}
-                  error={isTouched && errorMessage ? errorMessage : undefined} // 🔹 Muestra el error solo si touched.rut === true (si se ingresó un valor)
-                />
-             </div> 
-        )
-      case 'select'://OJO no usa <Field>
-        const dataSelect=(options && options.length>0 )?staticOptions : datosSelect;
-        // console.log('en FieldComponentDF dataSelect',dataSelect); 
-        return (
-          dataSelect &&
-          <CustomSelect label={label}  width= {field.width } options={dataSelect} name={name}
-            value={values[fieldName]}
-            onChange={(value)=>setFieldValue(fieldName,value)}
-          />
-        )
-       case 'multiselect'://falta probar
-        return (
-            staticOptions &&
-            <CustomSelect label={label}  width= {field.width } options={staticOptions} multiple={true} name={name}
-                value={String(field?.value)} //es un array de string
-                onChange={(values)=>setFieldValue(fieldName,values)}
-            />)
-
-      case 'number':
-        return <CustomInput label={label}  width={width} type='number' visible={visible} 
-        value={values[fieldName]}
-        onChange={(e)=>setFieldValue(fieldName,e.target.value)}
-        />
-      case 'RUT':
-        console.log('en FieldComponentDF field',type,errorMessage, isTouched );
-        // return <CustomInput {...commonProps} type="RUT" />;
-         return (
-            <Field as={CustomInput} type='RUT' width={width} visible={visible}
-              name={name}
-              label={label}
-              //required={field.validations?.some(v => v.type === "required")}
-              required={isRequired}
-              error={isTouched && errorMessage ? errorMessage : undefined} // 🔹 Muestra el error solo si touched.rut === true (si se ingresó un valor)
-            />
-         )
-      case 'file'://probar OJO no usa <Field>
-        return <CustomFileInput label={label} name={name}  width={width}  accept={".img, .jpg, .png"}  />;
-      default:
-        throw new Error(`El type: ${type} no es soportado`);
-    }
-    */
-  //};

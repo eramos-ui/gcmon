@@ -1,4 +1,4 @@
-// /pages/api/forms/saveForms/updateDocMovimiento.ts
+// /pages/api/forms/saveForms/No se permiten modificaciones en documentos.ts
 /*
 Aquí se graba el formulario dinámico de la coleción DocGasto y DocIngreso de la BD 
 */
@@ -55,9 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const tipoDocumento=row.tipoDocumento;
   const nroDocumento=row.nroDocumento;
   const esModificacion= (nroDocumento && nroDocumento>0)? true:false;//si tiene nroDocumento es una modificación
-  if (tipoDocumento ==="GASTO" && esModificacion){
-    return res.status(400).json({ error: "No se permiten modificaciones en documentos del tipo 'EGRESO'" });
-  }
+  // if (tipoDocumento ==="GASTO" && esModificacion){
+  //   return res.status(400).json({ error: "NNo se permiten modificaciones en documentos 'EGRESO'" });
+  // }
   // console.log('fechaDocumento,familia, tipoDocumento, nroDocumento, esModificacion',fechaDocumentoDate,familia, tipoDocumento,nroDocumento,esModificacion)
       //  return res.status(405).json({ message: 'Probando' });
   // Seleccionar el modelo adecuado
@@ -91,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // console.log('nuevoNroCarteraIngreso',nuevoNroCarteraIngreso);
 
   const clases = await ClaseMovimiento.find({ idOrganizacion: 1 }); 
-  // console.log('en updateDocMovimiento ultimo',ultimo,nuevoNro);
+  // console.log('en No se permiten modificaciones en documentos ultimo',ultimo,nuevoNro);
   let abono = Number(row.monto);
   // const fechaDocumento = nuevoDoc.createdAt;
   let nuevoDoc:any;   
@@ -150,10 +150,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   await CarteraGasto.deleteOne({ nroMovimiento: cartera.nroMovimiento  });
                 }
               } 
+              if (nuevoDoc.monto <= 0){
+                return res.status(200).json({ message: 'Documento eliminado con éxito por monto meno o igual a 0', nuevoDoc});
+              }
+
+      
        }
-      if (nuevoDoc.monto <= 0){
-        return res.status(200).json({ message: 'Documento eliminado con éxito por monto meno o igual a 0', nuevoDoc});
-      }
+
+
+
       await nuevoDoc.save();
        // return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
       
@@ -207,10 +212,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         monto:Number(row.monto),
         comentario: row.descripcion ||'',
       });
-      console.log('en updateDocMovimiento Egreso nuevoDoc',nuevoDoc);
+      console.log('en No se permiten modificaciones en documentos Egreso row',row);
+    
+      if (esModificacion){//eliminar el movimiento y las carteras de ingreso y gasto
+        const docExistente=await Model.findOne({ tipoDocumento, nroDocumento:row.nroDocumento });
+        console.log('docExistente',docExistente);
+        console.log('docModificado',nuevoDoc);
+        if (docExistente.monto === nuevoDoc.monto && docExistente.claseMovimiento === nuevoDoc.claseMovimiento
+          && docExistente.comentario === nuevoDoc.comentario
+
+        ){
+          return res.status(404).json({ message: 'No se encontró ninguna modificación al egreso' });
+        }
+        if ( nuevoDoc.monto !== docExistente.monto && nuevoDoc.monto > 0 )
+          return res.status(404).json({ message: 'No se puede modificar el monto del egreso, excepto poner monto cero para eliminarlo' });
+              //Aquí actualiza o elimina el docEgreso
+          if (nuevoDoc.monto === 0){////Aquí actualiza o elimina el docEgreso
+                console.log('Elimina'); //Elimna el docGasto y los movimiento que en la carteraGasto tengo el doc en la referencia
+              }
+          
+          else {
+            console.log('Modifica');//Actualiza el docGasto en los campos: idClaseMovimiento, descripcion, idUsuario y updatedAt
+          }
+          console.log('Pasó......');
+       }
+       return;   
+       return res.status(400).json({ message: 'Documento creado e imputado correctamente'});
       await nuevoDoc.save();
-      // return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
-      // return;   
 
       const newCarteraGasto = {
         nroMovimiento: nuevoNroCarteraGasto,

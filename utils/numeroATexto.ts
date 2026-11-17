@@ -26,7 +26,7 @@ export const numeroATexto = (numero: number | string): string => {
     const convertirDecimales = (numStr: string): string => {
         const partes = numStr.split(",");
         return partes.length === 2
-            ? `${convertirEntero(parseInt(partes[0]))} con ${partes[1].substring(0, 2)}/100`
+            ? `${convertirEntero(parseInt(partes[0]))} con ${partes[1].left(0, 2)}/100`
             : convertirEntero(parseInt(numStr));
     };
 

@@ -2,13 +2,12 @@
 import { FormFieldDFType } from "@/types/interfaceDF";
 
 export const buildInitialValues = (
-  fields: FormFieldDFType[],
+  fields: FormFieldDFType[], //los campos editables que vienen de la row se definen en el json en editFields
   row: Record<string, any> = {}
 ): Record<string, any> => {
   const initial: Record<string, any> = {};
   initial['_id']=undefined;
-  // console.log('en buildInitialValues fields',fields)
-  // console.log('en buildInitialValues row',row)
+  // console.log('en buildInitialValues row, fields', row, fields);
   fields.forEach(field => {
     const fieldName = field.name;
 
@@ -17,6 +16,15 @@ export const buildInitialValues = (
       initial[fieldName] = row[fieldName];//el valor viene en la row que se edita
     } else {
       // Si no, define un valor por defecto según tipo
+      //primero reviso el caso de claseMovimiento con idClaseMovimiento de egresos que por error cambié el  fieldName
+      if (row.tipoDocumento ==='GASTO' && fieldName ==='idClaseMovimiento' && row.hasOwnProperty('claseMovimiento') )
+      {
+        // console.log ('claseMovimiento', row);
+        initial[fieldName] = row['claseMovimiento'];
+        if (row['claseMovimiento'] !== 98 && row['claseMovimiento'] !== 99) row['descripcion']='';
+      }
+      else {
+      
       switch (field.type) {
         case "number":
           // console.log('en buildInitialValues number',(!field.value || field.value === ''));
@@ -44,6 +52,7 @@ export const buildInitialValues = (
         default:
           initial[fieldName] = "";
       }
+    }
     }
   });
   // console.log('en buildInitialValues',initial);

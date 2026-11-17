@@ -18,7 +18,7 @@ interface GridContainerProps {
   editFormConfig?: FormConfigType; // Agregar editFormConfig como prop
   label: string; //para los tooltips
   objectGrid?:string;//para el tooltips de los botones de actions
-}
+} 
 
 const GridContainer: React.FC<GridContainerProps> = ({ columns, rows, actions, onEdit, onZoom,
     onDelete, columnWidths, editFormConfig, label, objectGrid }) => {

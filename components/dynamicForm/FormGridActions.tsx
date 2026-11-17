@@ -40,7 +40,7 @@ const FormGridActions: React.FC<GridActionsProps> = ({ onEdit, onDelete, onZoom,
         <button type="button" onClick={onEdit} className="text-blue-500 hover:text-blue-700">
           <FaEdit />
         </button>
-      </FormCustomTooltip>
+      </FormCustomTooltip> 
       }
       { (actions?.includes('zoom') ) &&
       <FormCustomTooltip text={`${tooltipsForZoom}` } color="white" backgroundColor="blue" position="top">

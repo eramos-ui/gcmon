@@ -126,18 +126,53 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
   }
   const handleDelete = async (index: number) => {
     const apiSaveForm=formData?.table.apiSaveForm;
-    const apiDeleteForm=formData?.table.apiDeleteForm; //case en que el delete no es un versión del documento, sin su eliminación. Es el case Evento, no el de Usuario    
+    const apiDeleteForm=formData?.table.apiDeleteForm; //case en que el delete no es un versión del documento, sin su eliminación. Es el case Evento, no el de Usuario 
     const row =(rows && rows[index])?rows[index]: null;
-    const column=formData.table.objectColumnNumberNameToDelete || 0;//número de la columns con el label de la alerta, sin no se define elige la 1era columna
+    // console.log('API index', index,row);   
+    const column=formData.table.objectColumnNumberNameToDelete || 0;//número de la columns con el label de la alerta de eliminación, sin no se define elige la 1era columna
+    // const columns={formData.table.columns};
+    const apiGetRows=formData?.table.apiGetRows;
+    // console.log('formId,apiGetRows',formId,apiGetRows);
+    const rowValues={...row};
+    let body={row:rowValues, formId:formId,  idUserModification:session?.user.id, password:undefined};//siempre agrega el idUserModification
+     console.log('body',body);
+   
     const col=formData.table.columns?.filter(c =>c.visible);//sólo las visible=true
+    // console.log('col',col);
     const nameGridRowColumnNameDelete= (col && col.length>0) ?col[column].name:formData.table.objectGrid;//name de la columna para obtener el value
     let labelAtributteDelete=formData.table.objectGrid +' ';//si no hay value mostrara el nombre de la grilla
     if (nameGridRowColumnNameDelete && nameGridRowColumnNameDelete.length>0) 
         labelAtributteDelete=labelAtributteDelete+'"'+row[nameGridRowColumnNameDelete].trim()+'"';
-    const confirmed =window.confirm(`Confirme la eliminación de ${labelAtributteDelete}`);  
+    if (formData.table.columns.length>0){
+      labelAtributteDelete='';
+        for (const fila of formData.table.columns) {
+            const attrName=fila.name;
+            const valor =row[attrName];           
+            if ( fila.typeColumn != 'string' || (fila.typeColumn === 'string' && valor !='')){
+              labelAtributteDelete=labelAtributteDelete+fila.name+": "+valor + "\n" ;
+            }
+      }
+      const arreglo=formData.table.columns;//Arreglo con los objetos que ya están en el label
+      for (const attr in row) {//se recorre los valores de la fila que tiene la tabla para gregar los que no estén
+        if (Object.hasOwn(row, attr)){
+          // console.log('Lo que se revisa buscado name y su valor',attr, row[attr]);          
+          const attrBusca=attr;
+          const existe = arreglo.some(
+            movimiento => movimiento.name === attrBusca
+          );
+          // console.log('existe', existe,attrBusca);
+          if (!existe && attrBusca.substring(0,2) != 'id' && attrBusca != 'fechaDate' && attrBusca != 'claseMovimiento') {
+            // console.log('attrBusca',attrBusca, typeof row[attr],  attrBusca.substring(0,2));
+            labelAtributteDelete=labelAtributteDelete+attrBusca+": "+row[attr] + "\n" ;
+          }
+        }
+      }
+    }  
+    const confirmed =window.confirm("Confirme la eliminación del egreso: " +"\n" + labelAtributteDelete);  
     if (!confirmed) return;
     if (apiDeleteForm && apiDeleteForm.length>0) {
       let ruta=apiDeleteForm;
+      // console.log('ruta',ruta);
       if (ruta && ruta.includes('[')){
         const urlInicio=ruta.split('[')[0];
         const inicio=ruta.split('[')[1];
@@ -145,29 +180,28 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
         const valueParam=row[param];
         ruta=urlInicio+replaceParam(valueParam)+inicio.split(']')[1];
       }
-        try{
-          const response = await fetch(`/api/${ruta}`, {// el _id viene como query param. por ejemplo:: /api/forms(saveForm/deleteEvento?id=...
-            method: 'DELETE',    
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-          const result=await response.json();  
-          if (response.ok) {
-            alert("Eliminado exitosamente..");
-            window.location.reload();
-          } else {
-            if (response.status === 400) {
-              alert(`${result.error}`); 
-            }else{
-              const errorMsg=( typeof result.error ==='object')? result.error.message:result.error;          
-              alert(`${errorMsg}, favor comuníquelo al administrador del sistema.`);  
-            }
+      try{
+        console.log('apiDeleteForm',apiDeleteForm);
+        const response = await fetch(`/api/${apiDeleteForm}`, {// el _id viene como query param. por ejemplo:: /api/forms(saveForm/deleteEvento?id=...
+          method: 'DELETE',    
+         body: JSON.stringify(body),
+        });
+        const result=await response.json();  
+        if (response.ok) {
+          alert("Eliminado exitosamente..");
+          window.location.reload();
+        } else {
+          if (response.status === 400) {
+            alert(`${result.error}`); 
+          }else{
+            const errorMsg=( typeof result.error ==='object')? result.error.message:result.error;          
+            alert(`${errorMsg}, favor comuníquelo al administrador del sistema.`);  
           }
-        } catch(error){
+        }
+      } catch(error){
         alert(`${error}, favor comuníquelo al administrador del sistema.`);
-        } 
-        return;     
+      } 
+      return;     
     }  
     // console.log('en handleDelete api saveForm',`/api/${apiSaveForm}`);
       try {//caso en que el DELETE no elimina sino que deja NO vigente
@@ -230,7 +264,7 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
       ruta=urlInicio+replaceParam(valueParam)+inicio.split(']')[1];
     }
     router.push(`${ruta}`);
-  }
+  } 
   const apiSaveform=formData.table.apiSaveForm;
   return (//Aquí va el despliegue de la grilla no editable con los datos de la tabla que se hace en FormTableGrid vía GridContainer
     <>

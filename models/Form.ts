@@ -58,7 +58,7 @@ const tableSchema = new Schema({
   columnWidths: [String],
   rowHeight: String,
   gridWidth: String,
-  actions:[String],
+  actions:[String], //"add", "edit", "delete"
   width: String,
   row:Number,
   borderColor: String,
@@ -68,7 +68,9 @@ const tableSchema = new Schema({
   spFetchSaveGrid: String,
   requiredPassword: Boolean,
   editFormConfig: editFormConfigSchema,
-  apiGetRows: String,
+  apiGetRows: String, //Api que carga la grilla con rowToShow filas
+  apiSaveForm: String,//Api que se acciona con el formulairio de edición "salvar cambios"
+  rowToShow:String,//filas que muestra en table- debe ser String porque va comom url
 })
 const requiredIfSchema = new Schema({
   field: String,

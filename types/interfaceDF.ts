@@ -25,7 +25,7 @@ export interface ButtonConfigDFType {
   }
   export interface FormFieldDFType { //los campos del formulario Dynamic
     type: InputDFType;
-    name: string;
+    name: string; 
     label: string;
     autoComplete?:'on' |'off';
     placeholder?: string;

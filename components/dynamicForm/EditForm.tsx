@@ -67,11 +67,12 @@ export const EditForm: React.FC<EditFormProps> = ({
   formId,
   width,
   height,
-  ...props
+  ...props 
 }) => {
-  //  console.log('en EditForm fields',fields);
-    const formRef = useRef<HTMLFormElement | null>(null);
-    // console.log('en EditForm row',row,row.idClaseMovimiento);
+    //  console.log('en EditForm fields',fields);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  //  console.log('en EditForm row,isAdding',row,row.claseMovimiento, isAdding);
+  
  
   // const rowInitial = buildInitialValues(fields, row);
   const rowInitial = useMemo(() => buildInitialValues(fields, row), [fields, row]);
@@ -96,7 +97,7 @@ export const EditForm: React.FC<EditFormProps> = ({
         fields.map(async (field) => {//fields son los campos del formulario
           if ((field.type === 'selectNumber' || field.type ==='select' || field.type ==='multiselect') && field.apiOptions) {//los que tiene select o multiselect y apiOptions
             try {
-                const res = await fetch(`/api/${field.apiOptions}`);
+              const res = await fetch(`/api/${field.apiOptions}`);
               const data = await res.json(); 
               let options:Option[]=[];
               if (data && data.length>0){
@@ -130,7 +131,7 @@ export const EditForm: React.FC<EditFormProps> = ({
 
     // const requirePassword=fields.find(field => field.type === 'password')?.requirePassword;
     const password = requirePassword ? await bcrypt.hash('password123', 10) : undefined;
-    //  console.log('grabar fields',fields);    
+    // console.log('grabar fields',fields);    
     //  console.log('grabar requirePassword',requirePassword);   
 //  return;
     const withRutFields=fields.filter(field => field.type === 'RUT');//field que tienen field type='RUT' para formatearlo estándar
@@ -148,7 +149,7 @@ export const EditForm: React.FC<EditFormProps> = ({
         return;
       } 
     const apiSaveForms=`/api/${apiSaveForm}`;
-    // console.log('en EditForm grabar apiSaveForms',apiSaveForms);
+      console.log('en EditForm grabar apiSaveForms',apiSaveForms);
     // console.log('en EditForm grabar updateValues',values);return;   
     const rowValues={...updateValues};
     // const comentario=(values.descripcion)?values.descripcion:'';
@@ -225,11 +226,11 @@ export const EditForm: React.FC<EditFormProps> = ({
          }}
 
         onSubmit={async (values, { setSubmitting, validateForm }) => {
-           console.log("🚀 onSubmit ejecutado con:", values);
+          // console.log("🚀 onSubmit ejecutado con:", values);
           const correctedValues = normalizeStringValues(values, fields);
           const errors = await validateForm(correctedValues);
 
-           console.log('Errores de validación:',errors);
+          console.log('Errores de validación:',errors);
           if (Object.keys(errors).length === 0) {
             const _id = row._id;
             await grabar({ ...correctedValues, _id });
@@ -249,9 +250,11 @@ export const EditForm: React.FC<EditFormProps> = ({
               { Object.keys(groupedFields).map( item => {
                 if (!item) return null;
                 return (
+                  // console.log("en EditForm item:",item);
                   <div className={`flex flex-wrap -mx-2 mb-4 w-[100%]`} key={ item }           
                   >
-                    {groupedFields[Number(item)].map(field => {// console.log('en EditForm field',field);
+                    {groupedFields[Number(item)].map(field => { 
+                      // console.log('en EditForm field',field);
                       const fullField = loadedFields.find(f => f.name === field.name) || field;
                     return ( 
                       <div  key={`${item}-${field.name}`} className={`px-2`}  >

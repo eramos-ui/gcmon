@@ -1,0 +1,297 @@
+// // /pages/api/forms/saveForms/No se permiten modificaciones en documentos.ts
+// /*
+// Aquí se graba el formulario dinámico de la coleción DocGasto y DocIngreso de la BD 
+// */
+// import { NextApiRequest, NextApiResponse } from 'next';
+// import { connectDB } from '@/lib/db';
+// import { DocGasto } from '@/models/DocGasto';
+// import { DocIngreso } from '@/models/DocIngreso';
+// import { getSaldoCasaFondo } from '@/lib/movimientos/getSaldoCasaFondo';
+// import { CarteraIngreso } from '@/models/CarteraIngreso';
+// import { getIngresosNoOcupados } from '@/lib/movimientos/getIngresosNoOcupados';
+// import { getSaldoGasto } from '@/lib/movimientos/getSaldoGasto';
+// import { CarteraGasto } from '@/models/CarteraGasto';
+// import { ClaseMovimiento } from '@/models/ClaseMovimiento';
+// import { User } from '@/models/User';
+// import { Familia } from '@/models/Familia';
+// import { formatMoney } from '@/utils/formatMoney';
+
+// export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+//   await connectDB();
+//   const hoy = new Date();
+//   const mes = hoy.getMonth() + 1;
+//   const año = hoy.getFullYear();
+//   const añoMesActual = año * 100 + mes;
+//   if (req.method !== 'POST') {
+//     return res.status(405).json({ message: 'Método no permitido' });
+//   }
+ 
+//   const hoyStringCh=hoy.toLocaleDateString('es-CL');//truco para formatear string yyyy-mm-dd
+//   const dh=Number(hoyStringCh.split('-')[0]);
+//   const mh=Number(hoyStringCh.split('-')[1]);
+//   const yh=Number(hoyStringCh.split('-')[2]); 
+//   const fechaHoyDate=new Date(yh,mh-1,dh);
+//   const hoyString=fechaHoyDate.toISOString();
+
+//   const {row, idUserModification, actions } = JSON.parse(req.body);
+//   const d=row.fechaDocumento.split('-')[0];
+//   const m=row.fechaDocumento.split('-')[1];
+//   const y=row.fechaDocumento.split('-')[2]; 
+//   const fechaDocumentoDate=new Date(y,m-1,d);
+//   const fechaDocumentoString=fechaDocumentoDate.toISOString();
+
+//   const familias = await Familia.find({ //devuelve un array? y findOne no anda
+//       mesInicio: { $lte: añoMesActual },
+//       mesTermino: { $gte: añoMesActual }
+//       }).lean();
+
+//   const familia=familias.find(familia => familia.idFamilia === row.idFamilia);  
+  
+//   if (!row.tipoDocumento || (row.tipoDocumento !=="INGRESO" && row.tipoDocumento !=="GASTO") ) {
+//     return res.status(400).json({ error: "tipoDocumento debe ser 'GASTO' o 'INGRESO'" });
+//   }
+//   const docUsuario=await User.findOne({_id:idUserModification, vigente:true});
+//   const idUsuario=docUsuario?.idUser;
+//   const tipoDocumento=row.tipoDocumento;
+//   const nroDocumento=row.nroDocumento;
+//   const esModificacion= (nroDocumento && nroDocumento>0)? true:false;//si tiene nroDocumento es una modificación
+//   // if (tipoDocumento ==="GASTO" && esModificacion){
+//   //   return res.status(400).json({ error: "NNo se permiten modificaciones en documentos 'EGRESO'" });
+//   // }
+//   console.log('fechaDocumento,familia, tipoDocumento, nroDocumento, esModificacion',fechaDocumentoDate,familia, tipoDocumento,nroDocumento,esModificacion)
+//       //  return res.status(405).json({ message: 'Probando' });
+//   // Seleccionar el modelo adecuado
+//   const Model = row.tipoDocumento === "GASTO" ? DocGasto : DocIngreso;
+//   // Buscar el nroDocumento más alto
+//   const ultimo = await Model.findOne({ tipoDocumento })
+//   .sort({ nroDocumento: -1 })
+//   .select("nroDocumento")
+//   .lean() as { nroDocumento?: number } | null;
+//   let nuevoNro = 1;
+
+//   if (ultimo && typeof ultimo.nroDocumento === "number") {
+//     nuevoNro = ultimo.nroDocumento + 1;
+//   }
+//   let nuevoNroCarteraGasto=1;
+//   const ultimoNroCarteraGasto = await CarteraGasto.findOne()
+//   .sort({nroMovimiento: -1})
+//   .select("nroMovimiento")
+//   .lean() as {nroMovimiento?: number} | null;
+//   if (ultimoNroCarteraGasto && typeof ultimoNroCarteraGasto.nroMovimiento === "number") {
+//     nuevoNroCarteraGasto = ultimoNroCarteraGasto.nroMovimiento + 1;
+//   }    
+//   let nuevoNroCarteraIngreso=1;
+//   const ultimoNroCarteraIngreso = await CarteraIngreso.findOne()
+//   .sort({nroMovimiento: -1})
+//   .select("nroMovimiento")
+//   .lean() as {nroMovimiento?: number} | null;
+//   if (ultimoNroCarteraIngreso && typeof ultimoNroCarteraIngreso.nroMovimiento === "number") {
+//     nuevoNroCarteraIngreso = ultimoNroCarteraIngreso.nroMovimiento + 1;
+//   }
+//   // console.log('nuevoNroCarteraIngreso',nuevoNroCarteraIngreso);
+
+//   const clases = await ClaseMovimiento.find({ idOrganizacion: 1 }); 
+//   // console.log('en No se permiten modificaciones en documentos ultimo',ultimo,nuevoNro);
+//   let abono = Number(row.monto);
+//   // const fechaDocumento = nuevoDoc.createdAt;
+//   let nuevoDoc:any;   
+//   if ( tipoDocumento === "INGRESO"){//en los documentos las fechas creteAt y updatedAt son string y en las carteras fechaMovimiento y fechaDocumento son Date
+//       if (!row.idFamilia ) {
+//         return res.status(400).json({ error: "idFamilia debe ser obligatorio para 'INGRESO'" });
+//       }
+//       const idFamiliaNumber=Number(row.idFamilia);
+//       const familia=familias.find(familia => familia.idFamilia === idFamiliaNumber);
+//       const idCasa=familia?familia.idCasa:0;        
+//       nuevoDoc = new Model({
+//         tipoDocumento,
+//         nroDocumento: nuevoNro,
+//         idCasa:familia?idCasa:0,
+//         idUsuario,
+//         monto:Number(row.monto),
+//         comentario:row.comentario||'',//es para los gastos
+//         claseMovimiento:0,//es para los gastos
+//         createAt:fechaDocumentoString,//fecha de movimiennto en Doc es string
+//         updatedAt:  hoyString,//fechaDocumento en Doc es string
+//       });
+//        //console.log('nuevoDoc ingreso', nuevoDoc)
+//        const claseMov:number=(row.idClaseMovimiento === 0)? undefined: row.idClaseMovimiento;
+//        //chequea que el monto total de los ingresos devengados sea mayor al del ingreso que se quiere grabar
+//        const deudas = await getSaldoCasaFondo(idCasa, claseMov); //saldo por pagar de la casa y claseMovimiento
+//        //  console.log('deudas',deudas);
+       
+//        let totalSaldo = deudas.reduce((acumulador, objeto) => acumulador + objeto.saldo, 0) ;
+//        //  console.log('nuevoDoc.monto  totalSaldo',nuevoDoc.monto ,totalSaldo);
+//        const docExistente=await Model.findOne({ tipoDocumento, nroDocumento });
+//        if (esModificacion){//eliminar el movimiento y las carteras de ingreso y gasto
+//               const docExistente=await Model.findOne({ tipoDocumento, nroDocumento });
+//               totalSaldo=totalSaldo+docExistente.monto;
+//        }
+//       //  console.log('docExistente a modificar,totalSaldo',docExistente,totalSaldo);
+//        if (nuevoDoc.monto > totalSaldo) {
+//           const montoIngreso=formatMoney(nuevoDoc.monto);
+//           const montoSaldo=formatMoney(totalSaldo);
+//           const errorMsg=`Ingreso de $${montoIngreso}, excede el saldo por pagar de la casa $${montoSaldo}.`;
+//          return res.status(400).json({ error: `${errorMsg}` });
+//        };
+//        if (esModificacion){//eliminar el movimiento y las carteras de ingreso y gasto
+//               // console.log('esModificacion -docExistente'  ,docExistente); 
+//               if (docExistente){
+//                 await DocIngreso.deleteOne({ tipoDocumento, nroDocumento });
+//                 const carterasIngresoExistentes=await CarteraIngreso.find({ tipoDocumento, nroDocumento });
+//                 // console.log('carterasIngresoExistentes a modificar',carterasIngresoExistentes);
+//                 for (const cartera of carterasIngresoExistentes){
+//                   // console.log('eliminando cartera ingreso',cartera);
+//                   await CarteraIngreso.deleteOne({ nroMovimiento: cartera.nroMovimiento  });
+//                 }
+//                 const carterasGastosExistentes=await CarteraGasto.find({ tipoDocumento, nroDocumento });
+//                 // console.log('carterasGastosExistentes a eliminar',carterasGastosExistentes);
+//                 for (const cartera of carterasGastosExistentes){
+//                   // console.log('eliminando cartera gasto',cartera);
+//                   await CarteraGasto.deleteOne({ nroMovimiento: cartera.nroMovimiento  });
+//                 }
+//               } 
+//        }
+//       if (nuevoDoc.monto <= 0){
+//         return res.status(200).json({ message: 'Documento eliminado con éxito por monto meno o igual a 0', nuevoDoc});
+//       }
+//       await nuevoDoc.save();
+//        // return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
+      
+//       // const docIngreso=await DocIngreso.findOne({ tipoDocumento: "INGRESO"})
+//       // .sort({ nroDocumento: -1 })      
+//       // .lean() as { nroDocumento?: number } | null;
+
+//       for (const deuda of deudas) {
+//         const {
+//           tipoDocumentoRef,
+//           nroDocumentoRef,
+//           claseMovimiento: claseMovimientoDeuda,
+//           mesPago,
+//           saldo: montoDeuda,
+//         } = deuda;
+  
+//         if (abono <= 0) break;
+  
+//         const aPagar = abono >= montoDeuda ? montoDeuda : abono;
+//         abono -= aPagar;
+//         const newCarteraIngreso = {
+//           nroMovimiento: nuevoNroCarteraIngreso,
+//           tipoDocumento,
+//           nroDocumento: nuevoNro,
+//           tipoDocumentoRef,
+//           nroDocumentoRef,
+//           fechaDocumento:fechaDocumentoDate,//en cartera es Date
+//           fechaMovimiento: hoy,//en cartera es Date
+//           idCasa, 
+//           mesPago,
+//           claseMovimiento: claseMovimientoDeuda,
+//           entradaSalida: 'S',
+//           monto: aPagar,
+//          }
+//          nuevoNroCarteraIngreso=nuevoNroCarteraIngreso+1;
+//          await CarteraIngreso.create(newCarteraIngreso);
+//        }
+//   }
+
+//   if ( tipoDocumento === "GASTO"){
+//       // const hoyString=hoy.toISOString();
+//       // // Paso 1: Insertar el documento GASTO
+//       nuevoDoc =new Model({
+//         createAt: fechaDocumentoString,// en Doc es string
+//         updatedAt: hoyString,// en Doc es string
+//         tipoDocumento,
+//         nroDocumento:nuevoNro,
+//         idCasa:0,
+//         idUsuario,
+//         claseMovimiento:Number(row.idClaseMovimiento),
+//         monto:Number(row.monto),
+//         comentario: row.descripcion ||'',
+//       });
+//       console.log('doc',tipoDocumento,nuevoNro);
+//       const docActual = await Model.findOne({ tipoDocumento,nroDocumento }); //lo que había
+//        return res.status(400).json({ message: 'Aquí voy'});
+//        return;  
+      
+//       console.log('doc actual',docActual);
+//       console.log('en No se permiten modificaciones en documentos Egreso nuevoDoc',nuevoDoc);
+//       console.log('esModificacion',esModificacion);
+//       return res.status(200).json({ message: 'Documento creado e imputado correctamente'});
+
+//       await nuevoDoc.save();
+
+//       const newCarteraGasto = {
+//         nroMovimiento: nuevoNroCarteraGasto,
+//         tipoDocumento,
+//         nroDocumento:nuevoNro,
+//         tipoDocumentoRef: tipoDocumento,
+//         nroDocumentoRef: nuevoNro,
+//         fechaDocumento: fechaDocumentoDate,//en cartera es Date
+//         fechaMovimiento: hoy,//en cartera es Date
+//         idCasa:0,
+//         claseMovimiento:Number(row.idClaseMovimiento),
+//         entradaSalida: 'E',
+//         monto:Number(row.monto),
+//       }
+//       console.log('newCarteraGasto registra Egreso',newCarteraGasto)
+//    return res.status(200).json({ message: 'Aquí voy', nuevoDoc});   
+//       // Insertar en CarteraGasto como ENTRADA
+//       await CarteraGasto.create(newCarteraGasto);
+//       nuevoNroCarteraGasto=nuevoNroCarteraGasto+1;
+//       // Paso 2: Obtener ingresos no ocupados
+//       let ingresos = await getIngresosNoOcupados(1); // idUsuario para obtener idOrganizacion
+//       // console.log('ingresos',ingresos.length);
+//       // console.log('ingresos[0]',ingresos[0]); 
+//       // console.log('ingresos[1]',ingresos[1]);
+//       // Paso 3: Obtener gastos pendientes (SaldoGasto) para compesar
+//       let gastosConSaldo = await getSaldoGasto(1); //los gastos que tienen saldo por pagar
+//       console.log('gastosConSaldo',gastosConSaldo.length,gastosConSaldo)
+// // return res.status(200).json({ message: 'Documento creado e imputado correctamente', nuevoDoc});
+
+//       // Paso 4: Compensación cruzada
+//        for (const ingreso of ingresos) {
+//         //  console.log('ingreso',ingreso);
+//          let saldoIngreso = ingreso.monto;
+//          const claseIngreso = ingreso.claseMovimiento;
+//          for (let i = 0; i < gastosConSaldo.length && saldoIngreso > 0; ) {
+//           const gasto = gastosConSaldo[i];
+//           const claseIngresoSalda=clases.find( (c:any )=> c.idClaseMovimiento===gasto.claseMovimiento);
+//           // console.log('claseIngresoSalda',claseIngresoSalda.ingresoSalda,claseIngreso)
+//           if (claseIngresoSalda.ingresoSalda !== claseIngreso) {
+//             i++;
+//             continue;
+//           }
+//           // console.log('gasto',gasto)
+//           const montoGasto = gasto.saldo;
+//           const abona = Math.min(saldoIngreso, montoGasto);
+//           if (abona > 0){
+//             const newCarteraGasto = {//se registra en la cartera si hay abono
+//               nroMovimiento: nuevoNroCarteraGasto,
+//               tipoDocumento:ingreso.tipoDocumento,
+//               nroDocumento:ingreso.nroDocumento,
+//               tipoDocumentoRef:tipoDocumento,
+//               nroDocumentoRef: nuevoNro,
+//               fechaDocumento: fechaDocumentoDate, //en cartera es Date
+//               fechaMovimiento: hoy,//en cartera es Date
+//               claseMovimiento: gasto.claseMovimiento,
+//               entradaSalida: 'S',
+//               idCasa:0,
+//               monto: abona,
+//             }
+//             console.log('newCarteraGasto compensa Gasto con Ingreso',newCarteraGasto, abona)
+//             await CarteraGasto.create(newCarteraGasto);
+//             saldoIngreso -= abona;
+//             gasto.saldo -= abona;
+//             nuevoNroCarteraGasto=nuevoNroCarteraGasto+1;
+//           }
+//           if (gasto.saldo <= 0) {
+//             gastosConSaldo.splice(i, 1);
+//           } else {
+//             i++;
+//           }
+//           //console.log('newCarteraGasto',i,saldoIngreso,gasto.saldo)
+//         }
+//       } //fin del for de ingresos
+//     }
+//     return res.status(200).json({ message: 'Documento creado e imputado correctamente', nuevoDoc});
+
+// }

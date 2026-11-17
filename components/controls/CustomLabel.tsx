@@ -1,4 +1,5 @@
-import './CustomLabel.css';
+// import CustomLabel from "./CustomLabel";
+
 
 
 export interface Props {//para cambiar las props del control

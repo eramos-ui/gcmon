@@ -143,7 +143,7 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
     let labelAtributteDelete=formData.table.objectGrid +' ';//si no hay value mostrara el nombre de la grilla
     if (nameGridRowColumnNameDelete && nameGridRowColumnNameDelete.length>0) 
         labelAtributteDelete=labelAtributteDelete+'"'+row[nameGridRowColumnNameDelete].trim()+'"';
-    if (formData.table.columns.length>0){
+    if (formData.table.columns && formData.table.columns.length>0 ){
       labelAtributteDelete='';
         for (const fila of formData.table.columns) {
             const attrName=fila.name;

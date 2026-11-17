@@ -152,7 +152,7 @@ export const FieldComponentDF: React.FC<FieldComponentDFProps> = ({ field, value
               {label} 
           </label>
          {/* <span style={{ marginLeft: "10px" }}>El texto</span>  */}
-          <CustomLabel label={field.value} size='normal+'   />
+          <CustomLabel label={field.value?.toString() || ''} size='normal+'   />
         </div>
       )  
     default:

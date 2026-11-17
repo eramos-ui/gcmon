@@ -26,7 +26,6 @@ import { FieldComponentDF } from '../dynamicForm/FieldComponentDF';
 import { useEffect, useMemo, useState } from 'react';
 import { buildInitialValues } from '@/utils/buildInitialValuesForDynamicForm';
 import { normalizeStringValues } from '@/utils/normalizeStringValue';
-import { ReturnDocument } from 'mongodb';
 
 interface EditFormProps { // formulario dynamic
   formConfig: FormConfigDFType;

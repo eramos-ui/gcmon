@@ -212,32 +212,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         monto:Number(row.monto),
         comentario: row.descripcion ||'',
       });
-      console.log('en No se permiten modificaciones en documentos Egreso row',row);
+      // console.log('en No se permiten modificaciones en documentos Egreso row',row);
     
-      if (esModificacion){//eliminar el movimiento y las carteras de ingreso y gasto
-        const docExistente=await Model.findOne({ tipoDocumento, nroDocumento:row.nroDocumento });
-        console.log('docExistente',docExistente);
-        console.log('docModificado',nuevoDoc);
-        if (docExistente.monto === nuevoDoc.monto && docExistente.claseMovimiento === nuevoDoc.claseMovimiento
-          && docExistente.comentario === nuevoDoc.comentario
+      // if (esModificacion){//eliminar el movimiento y las carteras de ingreso y gasto
+      //   const docExistente=await Model.findOne({ tipoDocumento, nroDocumento:row.nroDocumento });
+      //   console.log('docExistente',docExistente);
+      //   console.log('docModificado',nuevoDoc);
+      //   if (docExistente.monto === nuevoDoc.monto && docExistente.claseMovimiento === nuevoDoc.claseMovimiento
+      //     && docExistente.comentario === nuevoDoc.comentario
 
-        ){
-          return res.status(404).json({ message: 'No se encontró ninguna modificación al egreso' });
-        }
-        if ( nuevoDoc.monto !== docExistente.monto && nuevoDoc.monto > 0 )
-          return res.status(404).json({ message: 'No se puede modificar el monto del egreso, excepto poner monto cero para eliminarlo' });
-              //Aquí actualiza o elimina el docEgreso
-          if (nuevoDoc.monto === 0){////Aquí actualiza o elimina el docEgreso
-                console.log('Elimina'); //Elimna el docGasto y los movimiento que en la carteraGasto tengo el doc en la referencia
-              }
+      //   ){
+      //     return res.status(404).json({ message: 'No se encontró ninguna modificación al egreso' });
+      //   }
+      //   if ( nuevoDoc.monto !== docExistente.monto && nuevoDoc.monto > 0 )
+      //     return res.status(404).json({ message: 'No se puede modificar el monto del egreso, excepto poner monto cero para eliminarlo' });
+      //         //Aquí actualiza o elimina el docEgreso
+      //     if (nuevoDoc.monto === 0){////Aquí actualiza o elimina el docEgreso
+      //           console.log('Elimina'); //Elimna el docGasto y los movimiento que en la carteraGasto tengo el doc en la referencia
+      //         }
           
-          else {
-            console.log('Modifica');//Actualiza el docGasto en los campos: idClaseMovimiento, descripcion, idUsuario y updatedAt
-          }
-          console.log('Pasó......');
-       }
-       return;   
-       return res.status(400).json({ message: 'Documento creado e imputado correctamente'});
+      //     else {
+      //       console.log('Modifica');//Actualiza el docGasto en los campos: idClaseMovimiento, descripcion, idUsuario y updatedAt
+      //     }
+      //     console.log('Pasó......');
+      //  }
+      //  return;   
       await nuevoDoc.save();
 
       const newCarteraGasto = {

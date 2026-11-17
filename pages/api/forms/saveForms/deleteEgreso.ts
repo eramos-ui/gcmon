@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const {row, idUserModification, actions } = JSON.parse(req.body);
     console.log('row, idUserModification, actions',row, idUserModification, actions);
 
-    // const Model = row.tipoDocumento === "GASTO" ? DocGasto : DocIngreso;
+    const Model = DocGasto;
     const tipoDocumento=row.tipoDocumento;
     const nroDocumento=row.nroDocumento;
     if (!nroDocumento ){

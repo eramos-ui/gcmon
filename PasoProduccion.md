@@ -9,5 +9,5 @@ git push origin main
 
 
 luego ir a vercel.com con clave de google
-el deployment los hace sólo al hacer el push de la actualización 
-el nombre del deployment es el que se pone en el commit
+el deployment lo hace sólo al hacer el push de la actualización 
+el nombre del deployment es el que se pone en el commit. Por ejemplo "0.4 gamma"

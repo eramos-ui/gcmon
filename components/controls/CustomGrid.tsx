@@ -79,9 +79,9 @@ export const CustomGrid = <T,>({
     const [ currentInternalPage, setCurrentInternalPage ] = useState(currentPage ?? 0);
     const [ selectedGridRow, setSelectedGridRow ]         = useState<T | null>(null);
     const [ sortConfig, setSortConfig ]                   = useState<{ key: keyof T; direction: 'asc' | 'desc' } | null>(null);
-    const [ rows, setRows ]                               = useState<T[]>(data);//para manejar datos con la función ocultarValoresRepetidos       
+    const [ rows, setRows ]                               = useState<T[]>(data);//para manejar datos con la función ocultarValoresRepetidos     
+
     const sortedData = useMemo(() => {
-      // console.log('sortedData original', rows)
       if (!sortConfig) return rows;
       const sortData=[...rows].sort((a, b) => {
         const valA = a[sortConfig.key];
@@ -94,28 +94,34 @@ export const CustomGrid = <T,>({
         if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
-      let newData=sortData;
-      // console.log('sortData',sortData);
-      if (ocultarValoresRepetidos){
-        const newData=ocultarValoresRepetidos(sortData);
-      }
-      return newData
+      // let newData=sortData;
+      // if (ocultarValoresRepetidos){
+      //   newData=ocultarValoresRepetidos(sortData);
+      // }
+      // return newData;
+        return ocultarValoresRepetidos
+          ? ocultarValoresRepetidos(sortData)
+          : sortData;
   
-    }, [rows, sortConfig]);
-    useEffect(()=>{
-      // console.log('en useEffect de CustomGrid',rows)
-      if (rows && rows.length>0 && ocultarValoresRepetidos ){
-        const rowSorted=sortedData.slice(startIndex, endIndex);
-        //console.log('en useEffect de CustomGrid inside rowSorted',rowSorted)
-        // const newData=ocultarValoresRepetidos(rowSorted);
-        const processedData = ocultarValoresRepetidos
-        ? ocultarValoresRepetidos(data)
-        : data;
-        //console.log('en useEffect de CustomGrid inside newData',newData)
-        // setRows(rowSorted);
-        setRows(processedData);
-        }
-    },[data])
+    }, [rows, sortConfig, ocultarValoresRepetidos]);
+    const startIndex = currentInternalPage * rowsToShow;
+    const endIndex = startIndex + rowsToShow;
+
+    const processedData = useMemo(() => {
+        const rowSorted = sortedData.slice(startIndex, endIndex);
+
+        return rowSorted;
+
+      }, [sortedData, startIndex, endIndex]);
+    // useEffect(()=>{
+    //   if (rows && rows.length>0 && ocultarValoresRepetidos ){
+    //     const rowSorted=sortedData.slice(startIndex, endIndex);
+    //     const processedData = ocultarValoresRepetidos
+    //     ? ocultarValoresRepetidos(data)
+    //     : data;
+    //     setRows(processedData);
+    //     }
+    // },[data])
     const columnsToRender = useMemo(
       () =>
         columns.filter(c => {
@@ -143,8 +149,8 @@ export const CustomGrid = <T,>({
         setCurrentInternalPage(currentPage);
       }
     }, [currentPage]);
-    const startIndex = currentInternalPage * rowsToShow;    // Calcular índices de paginación
-    const endIndex = startIndex + rowsToShow;
+    // const startIndex = currentInternalPage * rowsToShow;    // Calcular índices de paginación
+    // const endIndex = startIndex + rowsToShow;
     const totalPages = (rows) ? Math.ceil(rows.length / rowsToShow):0;
     // const paginatedData =(data) ? data.slice(startIndex, endIndex):0;
     const paginatedData = sortedData.slice(startIndex, endIndex);

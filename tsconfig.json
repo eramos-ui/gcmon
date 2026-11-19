@@ -1,26 +1,32 @@
 {
   "compilerOptions": {
-    "types": ["node", "validator", "hoist-non-react-statics"],
+    "types": [
+      "node",
+      "validator",
+      "hoist-non-react-statics"
+    ],
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
-    "typeRoots": ["./node_modules/@types", "./types"],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
+    ],
     // "forceConsistentCasingInFileNames": true,
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "module": "esnext",    
+    "module": "esnext",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "experimentalDecorators": true,    
+    "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    
     "plugins": [
       {
         "name": "next"
@@ -31,16 +37,18 @@
         "./*"
       ]
     },
-    "target": "ES2017"
+    "target": "ES2017",
+    "moduleResolution": "node"
   },
   "include": [
     "types/**/*.d.ts",
     "next-env.d.ts",
     "**/*.ts",
-    "**/*.tsx", 
+    "**/*.tsx",
     ".next/types/**/*.ts",
     "lib/api.ts",
-    "scripts/**/*", "app/consultas/ingresosPeriodoCasa",
+    "scripts/**/*",
+    "app/consultas/ingresosPeriodoCasa"
   ],
   "exclude": [
     "node_modules"

@@ -5,7 +5,7 @@ Este componente consume sp: getSubMenuForm (@subMenuId) y extrae el campo jsonFo
 como de la edición de las filas y que se renderizan en EditForm  en editFields.También trae las filas (rows) de la tabla que se muestran en la grilla
 */
 "use client";
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 // import GoHomeButton from '@/components/general/GoHomeButton';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
@@ -41,14 +41,14 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
   const [ editingRowIndex, setEditingRowIndex ] = useState<number | null>(null);
   const [ isAdding, setIsAdding]                = useState(false);
 
-  const replaceParam=((param:string) => { 
+  const replaceParam=useCallback((param:string) => { 
     switch ( param ){
     case 'userId':      
       return session?.user.id
     default:
     return param;   
     }
-  })
+  }, [session?.user.id])
   const reLoad=() =>{//al cerrar el modal carga la pagina de nuevo
     window.location.reload();
   }
@@ -105,19 +105,17 @@ import { EditForm } from '@/components/dynamicForm/EditForm';
     }
     setLoading(true);
     let apiGetRows=formData?.table.apiGetRows;
-    // console.log('apiGetRows de la BD',apiGetRows)
     if(apiGetRows?.includes('[')) { //la url tiene parámetro
       const urlInicio=apiGetRows.split('[')[0];
       const inicio=apiGetRows.split('[')[1];
       const param=inicio.split(']')[0];      
       apiGetRows=urlInicio+replaceParam(param)+inicio.split(']')[1];
     }
-    // console.log('lee grilla',apiGetRows)
     if (apiGetRows) {
       fetchData(apiGetRows);
       setLoading(false);
     }
-  }, [formData]);
+  }, [formData, replaceParam]);
   if (formId === 0) {
     return <div>No valid subMenuId provided</div>;
   }

@@ -21,9 +21,10 @@ export default function HomePage() {
   const { data: session, status }                   = useSession();
   const [ cards, setCards ]                         = useState<Card[]>([]);
   const router                                      = useRouter();
+  const email = session?.user.email;
   useEffect(() => {
     const fetchCards = async () => {
-      const email=session?.user.email;
+      // const email=session?.user.email;
       if (email){
         const res = await fetch(`/api/catalogs/cards?email=${encodeURIComponent(email)}`);
         const data = await res.json();
@@ -33,7 +34,7 @@ export default function HomePage() {
       }
     };
     fetchCards();
-  }, []);
+  }, [email]);
   const handleClick = (path?: string) => {
     if (path) {
       router.push(path);

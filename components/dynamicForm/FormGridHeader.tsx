@@ -13,7 +13,7 @@ const FormGridHeader: React.FC<GridHeaderProps> = ({ columns, columnWidths = [],
   const [ vaActions, setVaAction ]  = useState(false);
   useEffect(()=>{
     if (actions.length <=1 && actions[0]==='add') setVaAction(false) //el add no requiere columna
-  },[])
+  },[actions])
   const capitalizeFirstLetter = (str: string): string => {
     if (!str) return str; // Retorna el string tal cual si está vacío o es undefined
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
